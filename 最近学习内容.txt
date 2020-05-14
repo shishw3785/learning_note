@@ -701,3 +701,28 @@ bash
 	一般登录后,linux会根据/etc/passwd设置一个shell，默认bash
 
 	环境变量通常以大写字符表示
+
+	变量
+		变量的设置，变量与变量内容以一个=号来连接
+			name=VBird
+		等号两边不能接空格,变量内容有空格需用双引号或单引号结合起来
+			name = VBird   name=Vbird good  #错误
+		变量只能是英文与数字且不能数字开头
+			2myname=VBird  #错误
+		又引号内的特殊字符可以保持原本的属性
+			var="lang is $LANG"  -> echo $var -> lang is zh_CN.UTF8
+		单引号内的特殊字符为一般字符
+			var=‘lang is $LANG' -> echo $var -> lang is $LANG
+		可用\转义符将特殊字符([ENter], \ , ', 空格等)变成一般字符
+			name=Vbird\'s\ good  -> echo $name -> Vbird's good
+		在一串命令中需要借由其它命令提供信息时,可以使用反单引号`或$()
+			version=$(uname -r)
+		变量扩增内容可以用${}字符
+			PATH=${PATH}:/home/hello
+		若变量需要在子进程中执行，
+			export 变量 #使其在为环境变量
+		取消变量
+			unset 变量
+
+		设置变量代替工作目录
+			work="/home/good" #不用""也行
