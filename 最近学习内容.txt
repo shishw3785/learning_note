@@ -702,14 +702,14 @@ bash
 
 	环境变量通常以大写字符表示
 
-	变量
+	变量，类型默认字符串
 		变量的设置，变量与变量内容以一个=号来连接
 			name=VBird
 		等号两边不能接空格,变量内容有空格需用双引号或单引号结合起来
 			name = VBird   name=Vbird good  #错误
 		变量只能是英文与数字且不能数字开头
 			2myname=VBird  #错误
-		又引号内的特殊字符可以保持原本的属性
+		双引号内的特殊字符可以保持原本的属性
 			var="lang is $LANG"  -> echo $var -> lang is zh_CN.UTF8
 		单引号内的特殊字符为一般字符
 			var=‘lang is $LANG' -> echo $var -> lang is $LANG
@@ -726,3 +726,70 @@ bash
 
 		设置变量代替工作目录
 			work="/home/good" #不用""也行
+
+		env 显示所有的环境变量
+
+		RANDOM 生成随机数的变量, 0~32767
+
+
+		set 观察显示所有的环境变量与用户自定义变量
+
+		PS1='[\u@\h \W]\$ '  命令提示符就是 [root@www~]#
+
+		$ shell的PID
+			echo $$ 2787
+
+		? 上个执行命令的返回值
+			ls -h -> echo $? -> 0  #命令能成功执行就返回0，否则就返回非0
+
+		export 自定变量转成环境变量
+			export myname #使myname变成环境变量，这样myname就可以在子进程中使用，export后没接变量时，会列出所有的环境变量
+
+		父进程与子进程
+			Linux登录之后得到一个BASH(父进程),在这Bash下面所执行的任何命令(子进程)都是由这个BASH所衍生出来的.如在父进程的bash下面执行bash进入到另一个界面(子进程)，原本的Bash就会暂时sleep，当子进程bash exit退出后才回到原本的BASH。
+
+			子进程仅继承父进程的环境变量,不会继承自定义变量
+
+		declare 将环境变量转成自定义变量
+
+
+		为什么环境变量的数据可以被字进程引用?
+			因为内存配置关系，启动一个shell时，操作系统会给这个SHELL在内存中分配一个区域，些内存中的变量就可以让子进程使用。若父进程用export功能，就可以让自定义的变量的内容写到上述内存区域中(环境变量)，当加载另一个子进程时(离开父进程),子shell可以调用父进程的环境变量所在内存区域到自己的环境变量内存区域中
+
+		语系 locale
+
+			查看语系
+				locale 
+			查看支持的所有语系
+				locale -a   #没有的话可以安装语言包
+
+			修时修改语系
+				LANG=en_US.utf8
+			永处修改要写到配置文件去
+				cat /etc/locale.conf
+				LANG=en_US.utf8
+
+
+
+		read   读取来自键盘输入的变量内容
+			-p  后面接提示字符
+			-t 	接等待的秒数
+
+			read -p "please enter your name: " -t 30 name -> hello -> echo $name -> hello
+
+		declare 声明变量的类型 
+			-a 将后面的变量定义为数组(array)类型 
+			-i 将后面的变量定义为整数类型 
+			-x 用法与export一样，将后面的变量变成环境变量
+			-r 交后面的变量设置成为readonly，不可更改内容与不能unset
+			-P 单独列出变量的类型 
+			declare -i sum=100+200+300 -> echo $sum -> 600    #变量类型默认为字符串所以要声明为整数类型,BASH的数值运算中,默认最多仅能到达整数形态，所以1/3结果是0
+
+		数组
+			设置数组 var[index]=content
+				var[1]="small min"
+				var[2]="big min"
+				var[3]="nice min"
+
+				echo ${var[1]} -> "small min"
+				echo "${var[1]}, ${var[1]}, ${var[1]}"
