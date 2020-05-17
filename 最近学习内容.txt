@@ -792,4 +792,34 @@ bash
 				var[3]="nice min"
 
 				echo ${var[1]} -> "small min"
-				echo "${var[1]}, ${var[1]}, ${var[1]}"
+				echo "${var[1]}, ${var[2]}, ${var[3]}"
+
+		ulimit
+			可以限制用户某些资源，如可以开启的文件数量,可以使用的cpu时间，使用的内存总量等
+			-a 列出所有的限制额度
+			-f 此shell可以建立的最大文件容量，单位为kbytes
+
+		变量的删除与替换
+			[root@localhost ~]# echo ${path}
+			/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin
+
+			删除/usr/local/sbin 第一个目录
+			[root@localhost ~]# echo ${path#/*local/sbin:}
+			/usr/local/bin:/usr/sbin:/usr/bin:/root/bin
+
+			删除前面所有的目录只保留 /root/bin
+			[root@localhost ~]# echo ${path##/*bin:}
+			/root/bin
+
+			# 替换符合文字的最短那一个
+			## 替换符合文字的最长那一个
+
+			删除最后一个目录
+			[root@localhost ~]# echo ${path%:*bin}
+			/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+			
+			只保留第一个目录
+			[root@localhost ~]# echo ${path%%:*bin}
+			/usr/local/sbin
+
+			% %% 与# ##类似，但是从后面匹配
