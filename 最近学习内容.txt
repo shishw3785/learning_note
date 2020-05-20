@@ -811,8 +811,8 @@ bash
 			[root@localhost ~]# echo ${path##/*bin:}
 			/root/bin
 
-			# 替换符合文字的最短那一个
-			## 替换符合文字的最长那一个
+			# 删除符合文字的最短那一个
+			## 删除符合文字的最长那一个
 
 			删除最后一个目录
 			[root@localhost ~]# echo ${path%:*bin}
@@ -823,3 +823,74 @@ bash
 			/usr/local/sbin
 
 			% %% 与# ##类似，但是从后面匹配
+
+			${变量/旧字符/新字符} 替换符合的第一个旧字符
+			￥{变量//旧字符/新字符} 全部替换
+
+
+20200519
+
+prtg添加https域名监控,add sensor要选择HTTP Advanced类型，然后域名填http://abc.com就行,Require Keyword要选择Set sensor to error if keyword is missing,对应的字符串可以填要监控的字符串(检测有没有劫持),也可以随便填比如(abc.com)
+
+变量的测试与内容转换
+	root@localhost ~]# echo $username
+
+	username变量没有设置时
+	[root@localhost ~]# username=${username-root}
+	[root@localhost ~]# echo $username 
+	root
+
+	变量为空时
+	[root@localhost ~]# username=""
+	[root@localhost ~]# username=${username-root}
+	[root@localhost ~]# echo $username 
+
+	[root@localhost ~]# username=${username:-root}
+	[root@localhost ~]# echo $username 
+	root
+	其它先跳过
+
+命令别名
+	alias, 可以将常用或长的命令创建成一个新的命令
+		alias lm='ls -al|mort' # 
+	也可以替换命令
+		alias rm='rm -i' #这样rm就变成了新的有-i参数的命令
+
+	alias 直接列出所有别名
+
+	unalias 取消别名
+
+历史命令
+	history
+		-n 列出最近n条命令
+		-c 将目前的shell中的所有history内容全部清除
+		-w 将目前的history记录到histfiles中
+
+		当以bash登录后,系统会主动同~/.bash_history读取以前执行
+		过的命令。~/.bash_history能记录的数量与HISTFILESIZE变量有关.假设这次登录后执行了100条命令,那当注销时,系统会将101~1100更新到~/.bash_history中，也就是说注销时会把最近的HISTFILESIZE记录到记录文件中,也可以用history -w强制写入
+
+		多用户登录命令写入为最后注销那个
+
+bash shell的操作环境
+	路径与命令查找顺序
+		1, 相对/绝对路径执行命令, 如/bin/ls 
+		2, 由alias找到该命令执行
+		3, 由bahs内置的(builtin)命令来执行
+		4, 通过$PATH变的的顺序找到的第一个变量来执行
+	可以通过type -a ls 查看顺序
+
+	bash登录与欢迎信息
+		/etc/issue #登录就看到的欢迎信息如操作系统与硬件等级，可以修改
+		/etc/motd  #可以设置让用户登录就看到的信息,如某时间点系统维护
+
+	bash的环境配置文件
+		一进入Bash就会取得一些有用的变量是因为系统有一些环境配置文件，让bash启动时就直接读取这些文件，这些环境配置文件又分为全局系统配置文件与文人偏好配置文件，alias与自定义的变量在bash注销时会失效，要想保留就得写得配置文件中
+
+		login shell 与non-login shell
+			区别在于有没有登录
+			login shell
+				取得bash时需要完整的登录流程,如tty1~tty6登录需要账密,些时取得的bash称为login shell
+			non-login shell
+				如在X的图形界面中启动终端或在原本的bash环境下再次输入bash命令,都是不需要账密的
+		login shell与non-loginshell读取的配置文件不一样
+		
