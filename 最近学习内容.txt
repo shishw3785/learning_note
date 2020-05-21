@@ -892,5 +892,46 @@ bash shell的操作环境
 				取得bash时需要完整的登录流程,如tty1~tty6登录需要账密,些时取得的bash称为login shell
 			non-login shell
 				如在X的图形界面中启动终端或在原本的bash环境下再次输入bash命令,都是不需要账密的
-		login shell与non-loginshell读取的配置文件不一样
-		
+			login shell与non-loginshell读取的配置文件不一样
+			
+			一般来说,login shell只会读取两个配置文件
+				/etc/profile, 系统的整体设置，最好不要修改
+				~/.bash_profile 或~/.bash_login 或 ~/.profile 属于用户个人设置,用户要添加的自己的数据就写入这里
+
+			/etc/profile(login shell才会读)
+				可以利用用户的标识符(uid)在、来决定很多重要的变量数据,也是每个用户登录取得bash时一定会读取的配置文件，想要帮所有用户设置整体环境就是改这里,主要变量有
+
+				PATH
+				MAIL
+				USER
+				HOSTNAME
+				HISTSIZE
+				umask
+
+				/etc/profile还会云调用外部的配置文件，下面的文件会依序被调用
+					/etc/profile.d/*.sh
+					/etc/locale.conf #语系相关
+					/usr/share/bash-comletion/completion/* #命令与文件补齐等
+				默认情况下读取的整体环境配置文件其实只有/etc/profile，但/etc/profile会调用其它的配置文件
+
+			读完整体环境设置后就会读取用户的个人配置文件,一般是这三个
+				/.bash_profile 
+				或~/.bash_login 
+				或 ~/.profile
+			只实只会读取其中的一个,读取顺序从上到下，前面的不存在才会云读取下面的
+			[leison@localhost ~]$ cat ~/.bash_profile 
+			# .bash_profile
+
+			# Get the aliases and functions
+			if [ -f ~/.bashrc ]; then
+				. ~/.bashrc
+			fi
+
+			# User specific environment and startup programs
+
+			PATH=$PATH:$HOME/.local/bin:$HOME/bin
+
+			export PATH
+
+			如PATH变量有设置，以累加的方式并export,-f ~/.bashrc则是存在bashrc就读入bashrc的配置，. ~/.bashrc 等于sorce ~/.bashrc,也就是说~/.bash_profile其实还会再调用~/.bashrc的内容
+
