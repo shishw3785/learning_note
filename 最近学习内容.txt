@@ -933,5 +933,103 @@ bash shell的操作环境
 
 			export PATH
 
-			如PATH变量有设置，以累加的方式并export,-f ~/.bashrc则是存在bashrc就读入bashrc的配置，. ~/.bashrc 等于sorce ~/.bashrc,也就是说~/.bash_profile其实还会再调用~/.bashrc的内容
+			如PATH变量有设置，以累加的方式并export,-f ~/.bashrc则是存在bashrc就读入bashrc的配置，. ~/.bashrc 等于sorce ~/.bashrc,也就是说~/.bash_profile其实还会再调用~/.bashrc的内容，所以最终读取的文件是~/.bashrc,可以将自己的偏好设置写入该文件
 
+		source 配置文件
+			配置文件/etc/profile等都是在取得login shell后才会读取的配置文件，所以如果将自己的偏好设置写入上述文件，那就要注销再登录后设置才会生效.source可以直接读取配置文件而不再注销登录
+
+			source /etc/profile
+			. /etc/profile   #两条命令等效
+
+		non-login shell
+			该bash只会读取~/.bashrc而已
+
+		~/.bashrc
+			[root@localhost ~]# cat ~/.bashrc 
+			# .bashrc
+
+			# User specific aliases and functions
+
+			alias rm='rm -i'
+			alias cp='cp -i'
+			alias mv='mv -i'
+
+			# Source global definitions
+			if [ -f /etc/bashrc ]; then
+				. /etc/bashrc
+			fi
+
+			root的bashrc已规范好命令别名的安全选项,centos 7.x还会主动调用/etc/bashrc文件,因为/etc/bashrc帮我们的BASH定义下面内容
+				根据不同的uid设置umask的值
+				根据不同的uid设置提示字符(PS1变量)
+				调用/etc/profile.d/*.sh设置
+
+		其它相关
+			/etc/man_db.conf
+				规范使用man page的该去哪查看数据的路径,tarball安装的软件的命令帮助man可能需要修改
+			~/.bash_history 
+				登录bash后读取此文件到内存，在BASH内就可以看到历史命令了
+			~/.bash_logout
+				注销bash后,系统再帮我做什么操作后才离开,如清屏
+
+	终端的环境设置 stty set
+		一般不修改,本身设置已经很好
+		
+		stty erase ^h  #用ctrl + h 删除字符(原来是Backspace)
+
+		set 
+			-u,默认不启用，若启用，当使用未设置变量时，会显示错误信息
+
+			echo $- # $-变量内容就是set的所有设置
+
+			set -u 
+			echo $virbird # 期待virdbird变量不存在,则会报错，没启用-u时会显示空
+
+		BASH默认的组合键
+			ctrl + c 终止目前的命令
+			ctrl + d 输入结束EOF，例如由件结束的时候
+			ctrl + m 回车
+			ctrl + s 停止屏幕输出
+			ctrl + q 恢复屏幕输出
+			ctrl + u 在提示符下将整行命令删除
+			ctrl + z 暂停目前的命令
+
+	通配符与特殊符号
+
+		通配符
+
+			* 代表0到无穷个任意字符
+			? 代表一定有一个任意字符
+			[] 代表一定有一个在括号内的字符(非任意字符),如[[abcd],代表一定有a或b或c或d的中的任意一个字符
+			[ - ] 代表在编码顺序内的所有字符,如[0-9]代表0和9之间的所有数字
+			[^ ]  ^反向选择, [^abc]代表一定有一个字符,但不是a,b,c
+
+			例找出/etc下面以cron为开头的文件
+			ll -d /etc/cron*
+
+			找出/etc下面刚好是5个字母的文件名
+			ll -d /etc/?????
+
+			找出/etc下面含有数字的文件
+			ll -d /etc/*[0-9]*
+
+			找出/etc下面文件名开头为非小写字母开头的文件
+			ll -d /etc/[^a-z]*
+
+		特殊符号
+
+			# 注释符号，写脚本常用
+			\ 转义符,将特殊字符与通配符还原成一般符号
+			| 管道
+			; 连续命令执行分隔符
+			~ 用户家目录
+			$ 使用变量前导符
+			!　逻辑运算上的非(not)
+			/ 路径分隔符，目录符号
+			>, >>  重定向输出
+			<, <<  重定向输入
+			'' 单引号,不具备变量替换功能,单引号内的$变量为纯文本
+			"" 双引号,具备变量替换功能
+			`` 反单引号,`中间的命令可先执行，等于$()
+			( ) 在中间为子shell的起始与结束
+			{ } 在中间为命令区块的组合
