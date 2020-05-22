@@ -1067,4 +1067,29 @@ bash shell的操作环境
 		find /home -name .bashrc &> list 两条都可以
 
 	standard input  <与<< 
-	
+		$ cat > test
+		hello
+		#ctrl + d 退出
+
+		cat test
+		hello
+
+		$ cat > test < ~/.bashrc #用文件替代键盘的输入
+		cat test
+		# .bashrc
+
+		# Source global definitions
+		if [ -f /etc/bashrc ]; then
+			. /etc/bashrc
+			.....
+			.....
+
+		$ cat > test << "eof"
+		> hello 
+		> good 
+		> eof
+		[leison@localhost ~]$ cat test
+		hello 
+		good 
+
+		利用<<可以不用ctrl + d，对写脚本有帮助
