@@ -1033,3 +1033,38 @@ bash shell的操作环境
 			`` 反单引号,`中间的命令可先执行，等于$()
 			( ) 在中间为子shell的起始与结束
 			{ } 在中间为命令区块的组合
+
+数据流重定向
+
+	standard output 与 standar error output
+		标准输出指的是命令执行所返回的正确信息,标准错误输出指的是命令执行失败返回的错误信息
+
+		标准输入(sdin): 代码为0, 使用< 或 <<
+		标准输出(stdout): 代码为1， 使用> 或>>  # 1> 1不写也行
+		标准错误输出(stderr): 代码为2, 合用 2> 或2>>
+
+		ll / > test # 把ll / 输出的信息写入文件或设备, 若test不存在系统则自动建立
+
+		1> 以覆盖的方法将正确的数据输出到指定的文件或设备上
+		1>> 以累加的方法将正确的数据输出到指定的文件或设备上
+		2> 以覆盖的方法将错误的数据输出到指定的文件或设备上
+		2>> 以累加的方法将错误的数据输出到指定的文件或设备上
+		注意  1>> 或 2>> 中间是没有空格的
+
+		[ABC@localhost ~]$ find /home -name .bashrc 
+		/home/leison/.bashrc
+		find: ‘/home/arod’: Permission denied
+
+		find /home -name .bashrc > list_right 2> list_error
+
+		/dev/null 垃圾黑洞,可以吃掉导向这个设备的任何信息
+			[leison@localhost ~]$ find /home -name .bashrc 2> /dev/null  
+			/home/leison/.bashrc #正确的输出屏幕,错误写出黑洞
+
+
+		将正确与错误的信息都写list
+		find /home -name .bashrc >list 2>&1  #stderro输出到stout,2的转到1
+		find /home -name .bashrc &> list 两条都可以
+
+	standard input  <与<< 
+	
