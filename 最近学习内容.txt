@@ -1093,3 +1093,29 @@ bash shell的操作环境
 		good 
 
 		利用<<可以不用ctrl + d，对写脚本有帮助
+
+	命令的执行的判断根据 ; && ||
+
+		cmd;cmd (不考虑命令相关性的连续命令执行)
+			如 $ sync;sync;shutdown -h now #关机前先执行两次sync同步写入磁盘操作
+
+		$? (命令返回值)与 && 或 ||
+			若前一个命令执行的结果为正确,在Linux下面会返回一个$?=0的值
+			cmd1 && cmd2, 若cmd1执行完毕且正确执行($?=0),则开始执行cmd2
+						  若cmd1执行完毕且为错误($?不等于0),则cmd2不执行
+
+			cmd1 || cmd2, 若cmd1执行完毕且正确执行($?=0),则cmd2不执行
+						  若cmd1执行完毕且为错误($?不等于0),则开始执行cmd2
+
+			例若存在/tmp/abc,则建立/tmp/abc/hehe文件
+			假设存在
+				ls /tmp/abc && /tmp/abc/hehe
+			例测试/tmp/abc是否存在,若在则不创建 ，不存在则创建
+				ls /tmp/abc || mkdir /tmp/abc 
+			例不清楚/tmp/abc是否存在,但就是要建立/tmp/abc/hehe
+				ls /tmp/abc || mkdir /tmp/abc && touch /tmp/abc/hehe
+				若存在/tmp/abc则不执行mkdir,$?=0向后转, &&遇到0,执行touch
+				若不存在/tmp/abc,则执行mkdir,后$?=0向后转,touch照样会执行
+
+			例判断/tmp/virding是否存在,存在显示"exist",不存在显示"not exist"
+				ls /tmp/virding && echo "exist" || echo "not exsit" #顺序重要
