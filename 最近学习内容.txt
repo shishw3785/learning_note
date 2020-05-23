@@ -1177,3 +1177,64 @@ bash shell的操作环境
 		root
 		root
 		root
+
+	排序命令
+		sort
+			-n 以纯数字来排序
+			-r 反向排序
+			-t 分隔符,默认[Tab]
+			-k 指定那个区间来进行排序
+
+			普通排序,sort默认以第一条信息来排，且以文字形式排序
+			[root@localhost ~]# cat /etc/passwd | sort
+			adm:x:3:4:adm:/var/adm:/sbin/nologin
+			alex:x:1001:1001::/home/alex:/bin/bash
+			apache:x:48:48:Apache:/usr/share/httpd:/sbin/nologin
+			arod:x:1002:1002::/home/arod:/bin/bash
+			bin:x:1:1:bin:/bin:/sbin/nologin
+			chrony:x:998:996::/var/lib/chrony:/sbin/nologin
+			daemon:x:2:2:daemon:/sbin:/sbin/nologin
+
+
+			以第3段且以纯数字来排序
+			[root@localhost ~]# cat /etc/passwd | sort -t ':' -k 3 -n
+			root:x:0:0:root:/root:/bin/bash
+			bin:x:1:1:bin:/bin:/sbin/nologin
+			daemon:x:2:2:daemon:/sbin:/sbin/nologin
+			adm:x:3:4:adm:/var/adm:/sbin/nologin
+			lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+			sync:x:5:0:sync:/sbin:/bin/sync
+
+		uniq (去重)
+			-c 进行计数
+
+			使用last取出账号栏,仅取出账号，进行排序后取出一位
+			[root@localhost ~]# last | cut -d ' ' -f 1| sort|uniq 
+
+			reboot
+			root
+			wtmp
+
+			加多账号登录次数
+			root@localhost ~]# last | cut -d ' ' -f 1 | sort | uniq -c #先sort
+      1 
+		     16 reboot
+		     89 root
+		      1 wtmp   #空白与wtmp是默认字符可以忽略
+
+		wc (统计行或字符)
+			-l 统计行数
+			-m 统计字符
+			[root@localhost ~]# cat /etc/man_db.conf |wc
+   			 131     723    5171
+   			 # 行	字数		字符数
+
+   			统计登录次数
+   			[root@localhost ~]# last | grep [a-zA-Z]|grep -v 'wtmp'|grep -v reboot | wc -l
+			89
+
+
+
+
+
+
