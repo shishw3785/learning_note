@@ -683,7 +683,8 @@ vim
 利用iconv可以进行文件编码的转换
 
 dos2unix, unix2dos可以变更文件的每一行的换行符,如windows与linux文件的换行符不一样
-
+	dos(windows)文件的换行符为^M$,称为CRLF
+	unix换行符为 $,  区别少了^M
 bash
 	控制计算机硬件的是操作系统的内核,我们用过shell输入命令与内核沟通，让内核来操作硬件准确工作，bash属于壳程序(shell),其它应用程序也称为壳程序
 
@@ -1234,7 +1235,53 @@ bash shell的操作环境
 			89
 
 
+	双向重定向 tee
+		可以让standoutput转存一份到文件内并将同样的数据在屏幕去处理
+		-a 以累加的方式将数据加入文件中
 
+		[root@localhost ~]# last | tee last.list | cut -d ' ' -f 1
+		root
+		root
+		root
+
+		# ls -l | tee ~/homefile |more
+
+		ls -l / | tee -a ~/homefile | more
+
+	字符转换命令
+		tr
+			可以删除字符或替换字符
+			-d 删除字符
+			-s 替换字符
+
+			所有小写变成大字
+			last | tr '[a-z]' '[A-Z]' #不用''也可以
+
+			先把unix文件变成dos换行符文件
+			cp /etc/passwd ~/passwd && unix2dos ~/passwd
+
+			查看换行符
+			cat -A ~/passwd
+			root:x:0:0:root:/root:/bin/bash^M$
+			bin:x:1:1:bin:/bin:/sbin/nologin^M$
+			daemon:x:2:2:daemon:/sbin:/sbin/nologin^M$
+
+			删除^M
+			cat ~/passwd | tr -d '\r' > ~/passwd.linux
+
+		col
+			-x 将tab键转换成对等的空格键
+			[root@localhost ~]# cat -A /etc/man_db.conf 
+			.....
+			SECTION^I^I1 1p 8...
+			......
+
+			^I为1个tab键
+
+			[root@localhost ~]# cat /etc/man_db.conf |col -x | cat -A
+			.....
+			SECTION         1 1p 8 2 3 3p 4 5
+			......
 
 
 
