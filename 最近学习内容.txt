@@ -1283,5 +1283,107 @@ bash shell的操作环境
 			SECTION         1 1p 8 2 3 3p 4 5
 			......
 
+		join
+			合并两个文件,有相同数据的那一行才将它加在一起
+			-t join默认以空格分隔数据,并且比对第一栏位
+			-1 数字1，代表第一个文件要用哪个栏位比对 
+			-2 代表第二个文件要用哪个栏位比对
 
+			[root@localhost ~]# head -n 3 /etc/passwd /etc/shadow
+			==> /etc/passwd <==
+			root:x:0:0:root:/root:/bin/bash
+			bin:x:1:1:bin:/bin:/sbin/nologin
+			daemon:x:2:2:daemon:/sbin:/sbin/nologin
 
+			==> /etc/shadow <==
+			root:$6$esu2az6WJraoEBnx$4qVMw/P4z4gn2S/RFhDD/SiyY2MZsM6xlfro8EFxrcvldSweyqFcF.OWrm2/vUG/.VXc5a4R2yDioqr1NS3Aw/::0:99999:7:::
+			bin:*:17834:0:99999:7:::
+			daemon:*:17834:0:99999:7:::
+
+			默认以第一栏比对并合并文件,第二文件的第一栏就不显不
+			[root@localhost ~]# join -t ':' /etc/passwd /etc/shadow | head -n 3
+			root:x:0:0:root:/root:/bin/bash:$6$esu2az6WJraoEBnx$4qVMw/P4z4gn2S/RFhDD/SiyY2MZsM6xlfro8EFxrcvldSweyqFcF.OWrm2/vUG/.VXc5a4R2yDioqr1NS3Aw/::0:99999:7:::
+			bin:x:1:1:bin:/bin:/sbin/nologin:*:17834:0:99999:7:::
+			daemon:x:2:2:daemon:/sbin:/sbin/nologin:*:17834:0:99999:7:::
+
+			例2
+			[root@localhost ~]# head -n 3 /etc/passwd /etc/group
+			==> /etc/passwd <==
+			root:x:0:0:root:/root:/bin/bash
+			bin:x:1:1:bin:/bin:/sbin/nologin
+			daemon:x:2:2:daemon:/sbin:/sbin/nologin
+
+			==> /etc/group <==
+			root:x:0:
+			bin:x:1:
+			daemon:x:2:
+
+			[root@localhost ~]# join -t ':' -1 4 /etc/passwd -2 3 /etc/group | head -n 3
+			join: /etc/passwd:6: is not sorted: sync:x:5:0:sync:/sbin:/bin/sync
+			join: /etc/group:11: is not sorted: wheel:x:10:
+			0:root:x:0:root:/root:/bin/bash:root:x:
+			1:bin:x:1:bin:/bin:/sbin/nologin:bin:x:
+			2:daemon:x:2:daemon:/sbin:/sbin/nologin:daemon:x:
+			#第一个文件4第4栏与第二文件的第三栏都是gid所以比对这一栏,相同的栏位被称到第一栏,剩下的第二文件的同行补到第一文件，注意join前所需处理的文件应该要事先排序
+
+		paste
+			也是将两个文件合并，直接将两行巾在一起，且以tab键隔开，不需要比对两个文件的数据
+
+			-d 可接分隔符,默认tab的数据
+			-  file部分写成-，表示来自标准输入
+
+			root@localhost ~]# paste /etc/passwd /etc/group
+			root:x:0:0:root:/root:/bin/bash	root:x:0:
+			bin:x:1:1:bin:/bin:/sbin/nologin	bin:x:1:
+			daemon:x:2:2:daemon:/sbin:/sbin/nologin	daemon:x:2:
+
+			group的内容作为标准输入给paste
+			[root@localhost ~]# cat /etc/group | paste /etc/passwd /etc/shadow - | head -n 3
+			root:x:0:0:root:/root:/bin/bash	root:$6$esu2az6WJraoEBnx$4qVMw/P4z4gn2S/RFhDD/SiyY2MZsM6xlfro8EFxrcvldSweyqFcF.OWrm2/vUG/.VXc5a4R2yDioqr1NS3Aw/::0:99999:7:::	root:x:0:
+			bin:x:1:1:bin:/bin:/sbin/nologin	bin:*:17834:0:99999:7:::	bin:x:1:
+
+		expand
+			将tab按键转成空格键
+			-t 后面接数字,一般是一个tab可以用8个空格键替换，可以自定义
+			[root@localhost ~]# grep '^MANPATH' /etc/man_db.conf |head -n 3 | expand -t 6| cat -A
+			MANPATH_MAP /bin              /usr/share/man$
+			MANPATH_MAP /usr/bin          /usr/share/man$
+			MANPATH_MAP /sbin             /usr/share/man$
+
+			已将tab转成6个空格
+			unexpand 可以将空格转为tab键
+
+	split
+		划分命令
+		-b 后接谷划分的文件大小，单侠,b,k,m等
+		-l 以行数来划分
+
+		[root@localhost tmp]# split -b 300k /etc/services services
+		[root@localhost tmp]# ll
+		total 656
+		drwxr-xr-x. 2 root root     18 May 22 22:36 abc
+		-rw-r--r--. 1 root root 307200 May 23 22:47 servicesaa
+		-rw-r--r--. 1 root root 307200 May 23 22:47 servicesab
+		-rw-r--r--. 1 root root  55893 May 23 22:47 servicesac
+
+		services，划分的文件名任取，被划分的取名xxxaa,xxxab,xxxac等
+
+		将上面三个划分的文件合成一个文件
+		root@localhost tmp]# cat servicesa* >> serviceback
+		[root@localhost tmp]# ll
+		total 1312
+		drwxr-xr-x. 2 root root     18 May 22 22:36 abc
+		-rw-r--r--. 1 root root 670293 May 23 22:48 serviceback
+		-rw-r--r--. 1 root root 307200 May 23 22:47 servicesaa
+		-rw-r--r--. 1 root root 307200 May 23 22:47 servicesab
+		-rw-r--r--. 1 root root  55893 May 23 22:47 servicesac
+
+		例ls -al / 的信息每10行划分一个文件
+		[root@localhost tmp]# ls -al / | split -l 10 - lsroot
+		[root@localhost tmp]# wc -l lsroot*
+		  10 lsrootaa
+		  10 lsrootab
+		   8 lsrootac
+		  28 total
+
+		重点是-, 如果需要输入或输出时没有文件,-就会被当成stdin或stdout
