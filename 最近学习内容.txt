@@ -1387,3 +1387,51 @@ bash shell的操作环境
 		  28 total
 
 		重点是-, 如果需要输入或输出时没有文件,-就会被当成stdin或stdout
+
+	xargs(参数代换)
+		很多命令其实不支持管道命令,可以通过xargs来提供命令使用,标准输入
+		-0 如果输入的stdin含有特殊字符,如 ` \ 空格等时,-0可以将它还原成一般字符
+		-e EOF的意思,后面可以接一个字符,当xargs分析到这个字符时,就会停止工作
+		-p 在执行每个命令时,都会询问使用者
+		-n 后面接次数,每次command命令执行时,要使用几个参数的意思
+
+		cut -d ':' -f 1 /etc/passwd | head -n 3 | xargs -n 1 id
+		uid=0(root) gid=0(root) groups=0(root)
+		uid=1(bin) gid=1(bin) groups=1(bin)
+		uid=2(daemon) gid=2(daemon) groups=2(daemon)
+
+		#因为id后面只能接一个参数,所以要-n 1 来一个一个参数给id，不然直接给3个出出错
+
+		加多询问
+		cut -d ':' -f 1 /etc/passwd | head -n 3 | xargs -p -n 1 id
+		id root ?...y
+		uid=0(root) gid=0(root) groups=0(root)
+		id bin ?...y
+		uid=1(bin) gid=1(bin) groups=1(bin)
+		id daemon ?...y
+
+		将所有的/etc/passwd内的账号都以id来查看,但查到sync时就结束命令
+		$ cut -d ':' -f 1 /etc/passwd | xargs -e'sync' -n 1 id
+		uid=0(root) gid=0(root) groups=0(root)
+		uid=1(bin) gid=1(bin) groups=1(bin)
+		uid=2(daemon) gid=2(daemon) groups=2(daemon)
+		uid=3(adm) gid=4(adm) groups=4(adm)
+		uid=4(lp) gid=7(lp) groups=7(lp)
+		#注意-e后面没空格,因为sync是在第6行，-e为eof，查到sync就结束命令(包括sync那行)
+
+		找出/usr/sbin下的有特殊权限的文件并使用ls -l列出
+		find /usr/sbin -perm /7000 | xargs ls -l
+		-rwsr-xr-x. 1 root root     117504 Nov  8  2018 /usr/sbin/mount.nfs
+		-rwxr-sr-x. 1 root root       7208 Oct 31  2018 /usr/sbin/netreport
+		-rwsr-xr-x. 1 root root      11216 Apr 11  2018 /usr/sbin/pam_timestamp_check
+		-rwxr-sr-x. 1 root postdrop 218632 Oct 31  2018 /usr/sbin/postdrop
+		-rwxr-sr-x. 1 root postdrop 260112 Oct 31  2018 /usr/sbin/postqueue
+		-rwsr-xr-x. 1 root root      36280 Apr 11  2018 /usr/sbin/unix_chkpwd
+		-rwsr-xr-x. 1 root root      11376 Oct 31  2018 /usr/sbin/usernetctl
+		#ls 并不是管道命令所以要用xargs替代，也可用下面的命令
+		ls -l $(find /usr/sbin -perm /7000)
+
+	- （减号的用途)
+		mkdir /tmp/homeback
+		tar -cvf - /home | tar -xvf - -C /tmp/homeback
+		#tar打包并不是记录下来而是转送到stdout,后面的-则是使用前一个命令的stdout,这样就不需要文件名了
