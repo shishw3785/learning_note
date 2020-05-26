@@ -1460,3 +1460,57 @@ bash shell的操作环境
 				[:upper:] 代表大写字符,A-Z
 				[:lower:] 代表小写字符 a-z
 				[:digit:] 代表数字 0-9
+
+		grep高级用法
+			-A 后面接数字,after的意思,除了列出该行外,后续的n行也一起列出
+			-B 后面接数字,before的意思,除了列出该行外,前面的n行也一起列出
+			-n 显示行号
+
+			[root@localhost tmp]# cat lsrootaa | grep 'etc'     
+			drwxr-xr-x.  84 root root 8192 May 22 23:18 etc
+			[root@localhost tmp]# cat lsrootaa | grep -A 2 'etc'
+			drwxr-xr-x.  84 root root 8192 May 22 23:18 etc
+			drwxr-xr-x.   4 root root   32 Apr 29 05:09 home
+			lrwxrwxrwx.   1 root root    7 Aug 11  2019 lib -> usr/lib
+			[root@localhost tmp]# cat lsrootaa | grep -B1 'home'
+			drwxr-xr-x.  84 root root 8192 May 22 23:18 etc
+			drwxr-xr-x.   4 root root   32 Apr 29 05:09 home
+
+			--color=auto #默认已经加入在alias当中了,不需额外添加
+
+		基础正则表达式练习
+			查找包含test或taste的行
+			grep -n 't[ae]st' regular_expree.txt # -n显示行号
+
+			查找oo前面无g的行
+			grep -n '[^g]oo' regular_expree.txt
+
+			oo前面不想要有小写字符
+			grep -n '[^a-z]oo' regular_expree.txt
+				#由于小写字符在编码上是顺序的,所以可以用a-z连续表示
+
+			取得有数字那一行
+			grep -n '[0-9]' regular_expree.txt
+
+			由于考虑到语系对于编码的顺序，上面那个例子可以表示为
+			grep -n '[^[:lower:]]oo' regular_express.txt
+			grep -n '[[:digit:]]' regular_express.txt
+
+			行首^与行尾$
+			在行首列出the
+			grep '^the' regular_express.txt
+
+			开头是小写字符
+			grep -n '^[a-z]' regular_expree.txt
+
+			开头不是英文字母
+			grep -n '^[^a-zA-Z]' regular_express.txt
+
+			行尾.结束
+			grep -n '\.$' regular_express.txt #小数点.有其它意义,所以要转义
+
+			找出空白行
+			grep -n '^$' regular_express.txt
+
+			忽略空白行与#开头的行
+			cat /etc/rsyslog.conf | grep -v '^#'| grep -v '^$'
