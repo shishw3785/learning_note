@@ -1539,10 +1539,106 @@ bash shell的操作环境
 		找到两个o的字符
 		grep 'o\{2\}' r.txt
 
-		g后面接2到5个o
-		grep 'go\{2,5\}' r.txt
+		g后面接2到5个o，再g
+		grep 'go\{2,5\}g' r.txt
 
 		两个o以上
-		grep 'go\{2,\}' r.txt
+		grep 'go\{2,\}g' r.txt
 			# grep 'gooo*' r.txt 也可以
 
+	基础正则表达式字符集合
+		通过以上的例子可以知道集合如下
+
+		^word 待查找的字符在行首
+
+		word$ 在行尾
+
+		. 代表一定有一个任意字符
+
+		\ 转义符,将特殊符号的特殊意义去除
+			例 要找含有单引号 ' 的一行
+			grep \' regular_express.txt  #注意不能用双单引号结合
+
+		[list] 列出想要的字符,例
+						grep 'g[ld]' r.txt 则字符串可以是 gl, gd
+
+		[n1-n2] 列出想要的字符
+					grep '[A-Z]' r.txt
+
+		[^list] 取反
+					grep 'oo[^t]' r.txt 可以找到ooa,oog等,但不能oot
+
+		\{n\} 连续n个前一个re字符
+		\{n,m\} 连续n到m个前一个re字符
+		\{n,\} 连续n个以上前一个re字符
+
+	sed 
+		管道命令,可以将数据进行替换,删除,新增,选取,选特定行等功能
+
+		-n 使用安静模式,一般sed中,所有来自stdin的数据一般都会被列到屏幕上,加上-n后,则只有经过sed特珠处理的那一行(或操作)才会被列出来
+		-e 直接在命令行模式上进行sed操作
+		-f 直接将sed的操作写在一个文件内
+		-r sed的模式使用扩展正则表达式,默认是基础正则表达式
+		-i 直接修改读取的文件内容,不在屏幕输出
+
+		操作说明 n1,n2 function
+		n1,n2 不见得会存在,一般代表选择进行的行数,如操作10~20行， 10,20 操作行为
+		function有如下行为
+			a 新增,后面可以接字符,而这些字符会在新的一行出行(下一行)
+			c 替换,后面可以接字符,这些字符可以替换n1,n2之间的行
+			d 删除,因为是删除所以d后面不接任何东西
+			i 插入,后接字符,在新的一行出现(上一行)
+			p 打印,将某个选择的数据打印出来,通常p会与参数 sed -n 一起运行
+			s 替换,通常搭配正则表达式,如 1,20s/old/new/g
+
+
+		以行为单行的新增/删除功能
+		将/etc/passwd的内容列出并打印行号，且将2~5行删除
+		nl /etc/passwd | sed '2,5d'
+	    1	root:x:0:0:root:/root:/bin/bash
+	    6	sync:x:5:0:sync:/sbin:/bin/sync
+	    7	shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+
+	    #sed后面接的操作要用''包住
+
+	    删除第3行到最后一行
+	    nl /etc/passwd | sed '3,$d'
+
+	    在第2行后加上字符
+	    nl /etc/passwd | sed '2a drink tea'
+
+	    在第2行前加字符
+	    nl /etc/passwd | sed '2i drink tea'
+
+	    在第2行后面加入两行
+	    nl /etc/passwd | sed '2a drink tea........\
+		> or drin beer'
+			#用 \ 
+
+		以行为单位的替换与显示功能
+		替换第2~5行的内容
+		nl /etc/passwd | sed '2,5c no_nombers'
+
+		只显示5~7行
+		nl /etc/passwd | sed -n '5,7p' 
+
+		部分数据的查找并替换功能
+		提取ip
+		ifconfig | grep 'inet'
+        inet 192.168.1.12  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::b767:af5c:a4e8:43b5  prefixlen 64  scopeid 0x20<link>
+        ....
+
+        ifconfig | grep '192.168.1.12'|sed 's/.*inet *//g'|sed 's/ *net.*$//g'
+		192.168.1.12
+
+		/etc/man_db.conf文件下找出MAN行,不要#开头注释与空白行
+		cat /etc/man_db.conf | grep 'MAN' | sed 's/^#.*//g' | sed '/^$/d'
+			#注意#.*,要连同#后面的数据也删除掉,如只有#则只删除#
+
+		直接修改文件内容
+		将regular_express.txt以每一行结尾为.的行改为!
+		sed -i 's/\.$/\!/g' regular_express.txt
+
+		最后一行新增字符#this is test
+		sed -i '$a #this is test' regular_express.txt
