@@ -1478,39 +1478,71 @@ bash shell的操作环境
 
 			--color=auto #默认已经加入在alias当中了,不需额外添加
 
-		基础正则表达式练习
-			查找包含test或taste的行
-			grep -n 't[ae]st' regular_expree.txt # -n显示行号
+	基础正则表达式练习
+		查找包含test或taste的行
+		grep -n 't[ae]st' regular_expree.txt # -n显示行号
 
-			查找oo前面无g的行
-			grep -n '[^g]oo' regular_expree.txt
+		查找oo前面无g的行
+		grep -n '[^g]oo' regular_expree.txt
 
-			oo前面不想要有小写字符
-			grep -n '[^a-z]oo' regular_expree.txt
-				#由于小写字符在编码上是顺序的,所以可以用a-z连续表示
+		oo前面不想要有小写字符
+		grep -n '[^a-z]oo' regular_expree.txt
+			#由于小写字符在编码上是顺序的,所以可以用a-z连续表示
 
-			取得有数字那一行
-			grep -n '[0-9]' regular_expree.txt
+		取得有数字那一行
+		grep -n '[0-9]' regular_expree.txt
 
-			由于考虑到语系对于编码的顺序，上面那个例子可以表示为
-			grep -n '[^[:lower:]]oo' regular_express.txt
-			grep -n '[[:digit:]]' regular_express.txt
+		由于考虑到语系对于编码的顺序，上面那个例子可以表示为
+		grep -n '[^[:lower:]]oo' regular_express.txt
+		grep -n '[[:digit:]]' regular_express.txt
 
-			行首^与行尾$
-			在行首列出the
-			grep '^the' regular_express.txt
+		行首^与行尾$
+		在行首列出the
+		grep '^the' regular_express.txt
 
-			开头是小写字符
-			grep -n '^[a-z]' regular_expree.txt
+		开头是小写字符
+		grep -n '^[a-z]' regular_expree.txt
 
-			开头不是英文字母
-			grep -n '^[^a-zA-Z]' regular_express.txt
+		开头不是英文字母
+		grep -n '^[^a-zA-Z]' regular_express.txt
 
-			行尾.结束
-			grep -n '\.$' regular_express.txt #小数点.有其它意义,所以要转义
+		行尾.结束
+		grep -n '\.$' regular_express.txt #小数点.有其它意义,所以要转义
 
-			找出空白行
-			grep -n '^$' regular_express.txt
+		找出空白行
+		grep -n '^$' regular_express.txt
 
-			忽略空白行与#开头的行
-			cat /etc/rsyslog.conf | grep -v '^#'| grep -v '^$'
+		忽略空白行与#开头的行
+		cat /etc/rsyslog.conf | grep -v '^#'| grep -v '^$'
+
+		任意一个字符 . 与重复字符*
+			. 代表一定有一个任意字符
+			* 代表重复前面一个字符0到无穷多次
+				#在bash中*可以代表0到多个字符,两者不同
+
+		找出g??d字符
+		grep 'g..d' r.txt
+
+		至少两个o以字
+		grep 'ooo*' r.txt 
+
+		g开头与g结尾的字符串,中间可有可无
+		grep 'g.*g' r.txt # .* 代表0或多个任意字符
+
+		找出任意数字的行
+		grep '[0-9][0-9]*' r.txt
+			# grep '[0-9]' r.txt 也可以
+
+		限定连续字符区间 {}
+			因为{}在shell中有特殊意义,所以必须要使用转义符 \ 来让它失去意义
+
+		找到两个o的字符
+		grep 'o\{2\}' r.txt
+
+		g后面接2到5个o
+		grep 'go\{2,5\}' r.txt
+
+		两个o以上
+		grep 'go\{2,\}' r.txt
+			# grep 'gooo*' r.txt 也可以
+
