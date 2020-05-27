@@ -1642,3 +1642,19 @@ bash shell的操作环境
 
 		最后一行新增字符#this is test
 		sed -i '$a #this is test' regular_express.txt
+
+	扩展正则表达式 egrep
+
+		+ 代表重复一个或一个以上的前一个字符
+			egrep 'go+d' r.txt
+
+		? 代表0个或1个前一个字符
+			egrep 'go?d' r.txt
+		| 用或or的方式找出数个字符串
+			egrep 'go|good' r.txt
+		() 找出群组字符串
+			egrep 'g(la|oo)d' r.txt
+				可以找出glad或good
+		()+ 多个重复群组
+			echo 'AxyzxyzxyzxyzC' | egrep 'A(xyz)+C' #注意没空格
+		
