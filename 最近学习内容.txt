@@ -1658,3 +1658,14 @@ bash shell的操作环境
 		()+ 多个重复群组
 			echo 'AxyzxyzxyzxyzC' | egrep 'A(xyz)+C' #注意没空格
 		
+文件的格式化
+	printf '%10s\t %5i\t %5i\t %5i\t %8.2f\t \n' $(cat p.txt|grep -v 'Name' )
+    DmTsai	    80	    60	    92	    77.33	 
+     VBird	    75	    55	    80	    70.00	 
+       Ken	    60	    90	    70	    73.33	
+
+       #对这三行格式化,%10s代表10个字符长度的字符串,\t tab， %5i, 5个字符长度的整数，%8.2f 8个字符长度的浮点数2位小数， \n 输出新的一行
+
+    [root@localhost ~]# printf '\x45\n'
+	E
+	#printf可以输出ascall数字与字符对应，上面就是输出16进字的45是什么字符
