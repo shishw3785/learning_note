@@ -1669,3 +1669,95 @@ bash shell的操作环境
     [root@localhost ~]# printf '\x45\n'
 	E
 	#printf可以输出ascall数字与字符对应，上面就是输出16进字的45是什么字符
+
+awk 数据化处理工具
+	sed常常用于整行的处理,awk倾向于一行当中分数个字段来处理
+
+	模式
+		awk '条件类型1{操作1} 条件类型2{操作2} ...' filename
+		
+		awk后续可以接文件,也可以读取来自前一个命令的标准输出。主要是处理每一行的字段内的数据,默认字段分隔符为'空格键或tab'
+
+	[root@localhost ~]# last -n 5 | awk '{print $1 "\t" $3}'
+	root	desktop-kacbmdc
+	root	desktop-kacbmdc
+	root	192.168.1.5
+	root	192.168.1.8
+	root	192.168.1.8
+		
+	wtmp	Sun
+
+	以上为awk最常用的操作,通过print功能将字段列出来,这里我们指定分隔符\t(tab), ',' 为空格分隔,因为不论每一行都要处理，所以就不需要'条件类型',然后我们要的是第1与第3栏
+
+	awk每一行每个字段都有变量名称,第1栏, $1,  第2栏, $2....   $0代表一整行
+	整个awk的处理流程是
+		1 读入第1行,并将第1行的数据写入$0,$1,$2.....变量中
+		2 根据条件类型,判断是否需要进行后面的'操作'
+		3 完成所有操作与条件类型
+		4 若后面还有'行操作',则重复上在1~3步骤,直到所有的数据都读完为止
+
+		这样可以知道awk以一行为处理的单位,以字段为最小的处理单位
+
+	变量    代表意义
+	NF      每一行$0拥有的字段数
+	NR      目前awk所处理的第几行数据
+	FS      目前空隔符,默认空格键
+
+	注意awk后续的所有有操作以单引号'括住,由于单引号与又引号必须成对出现,所以非变量部分要用双引号定义出来,因为单引号已经是awk的命令固定用法了
+
+	last后列出每一行的账号,列出目前处理的行数,并且说明该行有多少字段
+	last -n 5 | awk '{print $1 "\t line:" NR "\tcout numbers: "NF}'
+	root	 line:1	cout numbers: 10
+	root	 line:2	cout numbers: 10
+	root	 line:3	cout numbers: 10
+	root	 line:4	cout numbers: 10
+	root	 line:5	cout numbers: 10
+		 line:6	cout numbers: 0
+	wtmp	 line:7	cout numbers: 7
+
+	#注意NF等变量要用大写且不用$符号
+
+	awk的逻辑运算符
+		> 大于
+		< 小于
+		>= 大于或等于
+		<= 小于或等于
+		== 等于
+		!= 不等于
+
+		注意==是用来判断,如果是要给予一个值用=
+	例/etc/passwd列出第1列账号与第3例uid且uid小于10
+	awk '{FS=":"}$3<10{print $1 "\t" $3}' /etc/passwd
+	root:x:0:0:root:/root:/bin/bash	
+	bin	1
+	daemon	2
+	adm	3
+	....
+	#结果发现第一行没有正确显示,因为读入第一行行变量$1$2等默认的分融符还是空格,虽然有定义FS=':'，但是第二行才生效,所以要预先用BEGIN设置
+
+	[root@localhost ~]# cat /etc/passwd | awk 'BEGIN {FS=":"} $3<10 {print $1 "\t" $3}'
+	root	0
+	bin	1
+	daemon	2
+	adm	3
+	lp	4
+	sync	5
+	shutdown	6
+	halt	7
+	mail	8
+
+	[root@localhost ~]# cat t.txt 
+	name	lst  	2nd   	3th
+	vbird   23000   24000   25000
+	hello   26000   27000   29000
+	nice    22000   28000   20000
+	[root@localhost ~]# cat t.txt | awk 'NR==1{printf "%10s\t %10s\t %10s\t %10s\t %10s\n",
+	> $1,$2,$3,$4,"Total"}
+	> NR>=2{total=$1+$2+$3+$4
+	> printf "%10d\t %10d\t %10d\t %10d\t %10.2f\n",$1,$2,$3,$4,total}'
+	      name	        lst	        2nd	        3th	      Total
+	         0	      23000	      24000	      25000	   72000.00
+	         0	      26000	      27000	      29000	   82000.00
+	         0	      22000	      28000	      20000	   70000.00
+	#所有awk操作都在{}内,如多个命令辅助可以用;或直接以Enter按键隔开命令并非利用\,格式化输出时printf要用\n来分行,变量可以在awk中直接用,不需$
+	awk的操作内{}也支持if条件,如上面的NR==1可以写{}内 {if(NR==1)},建议NR==1在外面统一性
