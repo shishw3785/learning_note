@@ -1813,3 +1813,14 @@ awk 数据化处理工具
 pr
 	输出文件时顺便打印标题或面码
 	如  pr /etc/man_db.conf
+
+重要习题
+	找出/etc下含有*的文件或内容
+	grep '\*' $(find /etc -type f)
+	或
+	find /etc -type f | xargs grep '\*'   
+
+	找出/ 下含有*的文件或内容
+	grep '\*' $(find / -type f)
+	-bash: /usr/bin/grep: Argument list too long #命令串长度有限制,得用xargs
+	find / -type f 2> /dev/null| xargs -n 10 grep '\*'
