@@ -1780,3 +1780,36 @@ awk 数据化处理工具
 
 		不要用diff比对两个不相干的文件
 		diff还可以比对不同目录下相同文件名的内容
+
+	cmp
+		比对非纯文本,以字节去比对
+
+	patch
+		diff -Naur oldpasswd newpasswd > passwd.patch
+		cat passwd.patch 
+		--- oldpasswd	2020-05-26 04:51:41.306333925 +0800
+		+++ newpasswd	2020-05-26 04:22:00.064392202 +0800
+		@@ -1,9 +1,8 @@ #新旧文件修改界定范围,旧1-9行,新1-8行
+		 root:x:0:0:root:/root:/bin/bash
+		 bin:x:1:1:bin:/bin:/sbin/nologin
+		 daemon:x:2:2:daemon:/sbin:/sbin/nologin
+		-adm:x:3:4:adm:/var/adm:/sbin/nologin #左侧文件删除行
+		 lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+		-sync:x:5:0:sync:/sbin:/bin/sync #左侧文件删除行
+		+no sixlines    #右侧文件新增行
+		 shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+		 halt:x:7:0:halt:/sbin:/sbin/halt
+		 mail:x:8:12:mail:/var/spool/mail:/sbin/nologin
+
+		 #上面意思old文件要变成新文件就是第4行要删除与第6行要替换
+		 新制出出来的patch文件用来更新旧文件
+		 patch -p0 <passwd.patch
+
+		 恢复旧文件内容
+		 patch -R -p0 < passwd.patch
+
+		 #-p是后面接几层的意思,因为是在同一目录下面比对,因此不需要减去目录
+
+pr
+	输出文件时顺便打印标题或面码
+	如  pr /etc/man_db.conf
