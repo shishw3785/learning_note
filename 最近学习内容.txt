@@ -1761,3 +1761,22 @@ awk 数据化处理工具
 	         0	      22000	      28000	      20000	   70000.00
 	#所有awk操作都在{}内,如多个命令辅助可以用;或直接以Enter按键隔开命令并非利用\,格式化输出时printf要用\n来分行,变量可以在awk中直接用,不需$
 	awk的操作内{}也支持if条件,如上面的NR==1可以写{}内 {if(NR==1)},建议NR==1在外面统一性
+
+文件比对工具
+	什么时候会用到文件比对,通常是同一软件包的不同版本之间,比较配置文件与原始文件的差异，通常是用在ASCALL纯文本文件的比对
+
+	diff
+		比较两个文件的差异,以行为单位来比对,一般用在ascall纯文本文件比对,通常用在同一文件或软件的新旧版本差异上
+
+		cat /etc/passwd | sed -e '4d' -e '6c no sixlines' > /tmp/testpw/newpasswd
+			#sed 后面接两个以上操作时，每个命令前要-e
+		diff /etc/passwd /tmp/testpw/newpasswd 
+		4d3
+		< adm:x:3:4:adm:/var/adm:/sbin/nologin  #左边的第4行被删除了,基准右边的是第3行
+		6c5
+		< sync:x:5:0:sync:/sbin:/bin/sync
+		---
+		> no sixlines     #左边的第6行被替换成右边的第5行
+
+		不要用diff比对两个不相干的文件
+		diff还可以比对不同目录下相同文件名的内容
