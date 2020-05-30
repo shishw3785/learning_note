@@ -1824,3 +1824,42 @@ pr
 	grep '\*' $(find / -type f)
 	-bash: /usr/bin/grep: Argument list too long #命令串长度有限制,得用xargs
 	find / -type f 2> /dev/null| xargs -n 10 grep '\*'
+
+20200530
+
+shell脚本
+	注意事项
+		命令从上而下,从左而右地分析与执行
+		命令,选项,与参数间的多个空格都会被忽略掉
+		空白行也被忽略掉,tab所产生的空白同样视为空格
+		如果读取到一个Enter符号(CR),就尝试开始执行该行(命令)
+		如果一行的内容太多,则可以使用\Enter来扩展至下一行
+		#注释,任何接在#后面的内容都视作为注释文字而忽略
+
+	假设有/home/good/shell.sh命令,执行方法有
+		直接命令执行,shell.sh必须有rx权限,然后
+			绝对路径执行 /home/good/shell.sh
+			或相对路径执行 ./shell.sh
+			将shell.sh放入PATH指定目录内,如~/bin, 直接执行shell.sh
+		以bash程序来执行,通过bash shell.sh或 sh shell.sh执行(只需r权限)
+
+		#sh可以执行是因为/bin/sh其实是/bin/bash链路接文件,用bash是代表要直接以bash的功能执行shell.sh文件内的相关命令,sh有-n或-x参数来检查与跟综shell.sh语法的正确性
+
+	脚本范例
+	#/bin/bash
+	#program
+	#       this program show "hello world" in your screen
+	#History:
+	# 20200530 leison first release
+	PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin
+	export PATH
+	echo -e "Hello world \a \n "
+	exit 0
+
+	1 因为我们使用的是bash,所以必须要用!#/bin/bash来声明文件内使用bash语法,以#开头的行称为shebang行,那当这个程序执行时,就能够加载bash的相关环境配置文件(一般是非登录shell的~/.bashrc),并执行bash让我们下面的命令能够执行
+	2 程序内容说明,#用来注释说明,可以一些基本数据,脚本用途日期作者等
+	3 主要环境变量的声明,PATH或LANG等,这样程序就可以直接执行一些外部命令,而不必写绝对路径
+	4 主要程序
+	5 执行结果告知,定义返回值
+
+	执行sh shell.sh或chmod +x shell.sh;./shell.sh
