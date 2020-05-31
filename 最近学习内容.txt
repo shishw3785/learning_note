@@ -1980,3 +1980,77 @@ shell脚本
 			test  -w $file && echo "$file have w "
 			test  -x $file && echo "$file have x "
 
+	[] 和test一样
+		[ -e ${HOME} ]; echo $?
+		0
+
+		[ "${HOME}" == "${MAIN}" ]
+			#注意空格,其实=与==都可以，但bash中=是变量设置,==逻辑判断,建议最好==
+
+		中括号[]内的每个组件都需要有空格分隔
+		在中括号内的变量,最好都以双引号括起来
+		在中括号内的常,最好都以单或双引号括起来
+
+		test用法与[]几乎一模一样,中括号比较常用在条件判断式If...then...fi中
+
+		例执行一个程序让用户选择Y或N,当选择y或Y时,显示OK,continue.当选择n或N时,显示Oh,interrupt,选择其它显示I don't know what your choice is
+			#!/bin/bash
+
+			read -p "please enter y/Y or n/N : " num
+
+			[ "$num" == "y" -o "$num" == "Y" ] && echo "OK, continue" && exit
+			[ "$num" == "n" -o "$num" == "N" ] && echo "Oh, interrupt" && exit
+
+			echo " I don't know what is your choice is"
+			#-o或连接
+
+	shell脚本的默认变量
+		bash 3.sh 1   2   3   4
+			  $0  $1  $2  $3  $4 ....
+
+		$# 代表后接的参数个数
+		$@ 代表 "$1" "$2" "$3" "$4",变都都是独立的(用双引号括起来)
+		$* 代表 "$1c$2c$3c$4", 其中c为分隔符,默认空格
+			#$@与$*有所不同,记$@即可
+
+		#!/bin/bash
+
+		echo "script name is $0"
+		echo "total have $# 参数"
+		test "$#" -lt "2" && echo "参数太少" && exit
+		echo "all name is $@"
+		echo "first is $1"
+		echo "second is $2"
+		
+		上面脚本输出 >>
+		script name is 2.sh
+		total have 4 参数
+		all name is 1 2 3 4
+		first is 1
+		second is 2
+
+		shitf 造成参数变量号码偏移
+		#!/bin/bash
+
+		echo "script name is $0"
+		echo "total have $# 参数"
+		echo "all name is $@"
+		shift #偏移,移动变量
+		echo "total have $# 参数"
+		echo "all name is $@"
+		shift 3 #偏移3
+		echo "total have $# 参数"
+		echo "all name is $@"
+
+		上面脚本结果>>
+		bash 3.sh 1 2 3 4 5 6 
+		script name is 3.sh
+		total have 6 参数
+		all name is 1 2 3 4 5 6
+		total have 5 参数
+		all name is 2 3 4 5 6
+		total have 2 参数
+		all name is 5 6
+
+
+
