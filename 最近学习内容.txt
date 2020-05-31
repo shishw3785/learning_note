@@ -1863,3 +1863,120 @@ shell脚本
 	5 执行结果告知,定义返回值
 
 	执行sh shell.sh或chmod +x shell.sh;./shell.sh
+
+	简单脚本示例
+		交换示脚本
+		#!/bin/bash
+
+		read -p "please enter your first name: " firstname
+		read -p 'please enter your last name: ' lastname
+
+		echo -e "\nyou full name is $firstname $lastname"
+
+		创建三个以今天昨天前天日期名的空文件
+		#!/bin/bash
+
+		# enter a file filename
+		read -p 'please enter a filename: ' fileuser
+
+		#check filename exit or not,避免用户按到空格键或回车键
+		filename=${fileuser:-"filename"}  #fileuser变量如果存在就把其变量内容给filename,否则把filename内容给filename变量
+
+		date1=$(date --date='1 days ago' +%F)
+		date2=$(date --date='2 days ago' +%F)
+		date=$(date +%F)
+
+		file1=${filename}${date1}
+		file2=${filename}${date2}
+		file=${filename}${date}
+
+		touch $file1
+		touch $file2
+		touch $file
+
+		数值运算
+		#!/bin/bash
+
+		read -p "pleas enter a number: " num1
+		read -p "pleas enter second number: " num2
+
+		total=$(( ${num1} * ${num2} ))
+
+		echo "num1 * numb = $total"
+		#var=$((运算内空)),也可以declare -i total=${num1}*${num2},建议$(()),方便记忆而且小括号内可以加上空格符,而且bash shell默认仅支持到整数而已
+
+		取余echo $((13%3))
+		1
+
+		echo "12.3*5" | bc #含有小数点可以通过bc协助,但只对+-*有效,而且不能用$(())
+		61.5
+
+		通过bc求PI(圆周率),略过,可以设置多位小数值测试cpu负载
+
+	脚本执行方式的差异
+		利用直接执行的方式(绝对路径，相对路径, bash sh等)都是新的bash环境中(子进程)运行的,子进程完成后,子进程内的各项变量或操作将会结束而不会传回父进程中
+
+		source或. 执行脚本,将会直接在父进程执行,脚本内的变量或操作在父进程中也是存在的,和source ~/.bashrc道理一样,不能 bash ./barshrc
+
+判断式
+	test
+		测试的标志	代表意义
+		1. 关于某个文件名的『文件名型』判断，如test -e filename 表示存在否
+		-e	该『文件名』是否存在？(常用)
+		-f	该『文件名』是否存在且为文件(file)？(常用)
+		-d	该『文件名』是否存在且为目录(directory)？(常用)
+		-b	该『文件名』是否存在且为一个block device 装置？
+		-c	该『文件名』是否存在且为一个character device 装置？
+		-S	该『文件名』是否存在且为一个Socket 文件？
+		-p	该『文件名』是否存在且为一个FIFO (pipe) 文件？
+		-L	该『文件名』是否存在且为一个连结档？
+		2. 关于文件的权限侦测，如test -r filename 表示可读否(但root 权限常有例外)
+		-r	侦测该文件名是否存在且具有『可读』的权限？
+		-w	侦测该文件名是否存在且具有『可写』的权限？
+		-x	侦测该文件名是否存在且具有『可执行』的权限？
+		-u	侦测该文件名是否存在且具有『SUID』的属性？
+		-g	侦测该文件名是否存在且具有『SGID』的属性？
+		-k	侦测该文件名是否存在且具有『Sticky bit』的属性？
+		-s	侦测该文件名是否存在且为『非空白文件』？
+		3. 两个文件之间的比较，如： test file1 -nt file2
+		-nt	(newer than)判断file1 是否比file2 新
+		-ot	(older than)判断file1 是否比file2 旧
+		-ef	判断file1 与file2 是否为同一文件，可用在判断hard link 的判定上。主要意义在判定，两个文件是否均指向同一个inode 哩！
+		4. 关于两个整数之间的判定，例如test n1 -eq n2
+		-eq	两数值相等(equal)
+		-ne	两数值不等(not equal)
+		-gt	n1 大于n2 (greater than)
+		-lt	n1 小于n2 (less than)
+		-ge	n1 大于等于n2 (greater than or equal)
+		-le	n1 小于等于n2 (less than or equal)
+		5. 判定字串的资料
+		test -z string	判定字串是否为0 ？若string 为空字串，则为true
+		test -n string	判定字串是否非为0 ？若string为空字串，则为false。
+		注： -n亦可省略
+		test str1 == str2	判定str1 是否等于str2 ，若相等，则回传true
+		test str1 != str2	判定str1 是否不等于str2 ，若相等，则回传false
+		6. 多重条件判定，例如： test -r filename -a -x filename
+		-a	(and)两状况同时成立！例如test -r file -a -x file，则file 同时具有r 与 x 权限时，才回传true。
+		-o	(or)两状况任何一个成立！例如test -r file -o -x file，则file 具有r 或 x 权限时，就可回传true。
+		!	反相状态，如test ! -x file ，当file 不具有x 时，回传true
+		
+
+		OK！现在我们就利用test 来帮我们写几个简单的例子。首先，判断一下，让使用者输入一个文件名，我们判断：
+
+			这个文件是否存在，若不存在则给予一个『Filename does not exist』的讯息，并中断程式；
+			若这个文件存在，则判断他是个文件或目录，结果输出『Filename is regular file』或 『Filename is directory』
+			判断一下，执行者的身份对这个文件或目录所拥有的权限，并输出权限资料！
+
+			#!/bin/bash
+			read -p "please enter a filename: " file
+			#判断输入是否为空,为空就退出
+			test -z $file  &&  echo "you need enter a name" && exit
+			#判断是否存在,不存在退出
+			test ! -e $file && echo "not exit " && exit
+			#判断是文件还是目录
+			test -f $file && echo "$file is a file" || echo "$file is a direct"
+
+			test  -r $file && echo "$file have r " 
+			test  -w $file && echo "$file have w "
+			test  -x $file && echo "$file have x "
+
