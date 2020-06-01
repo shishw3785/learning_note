@@ -2170,3 +2170,157 @@ shell脚本
 
 		#秒数为自19700101累积而来的秒数
 
+	case
+
+		case $变量名称 in       #关键字case,变量前有美刀符号
+
+		  "第一个变量内容")      #每个变量内容用双引号,右括号为关键字
+		  程序段
+		  ;;				#每个类别结尾用;;处理
+
+		  "第二个变量内容")
+		  程序段
+		  ;;
+
+		  *)    #最后一个变量内容都用*, 代表其他值,但不包含上面的变量内容
+		  ;;
+	esac      #结尾反过来写
+
+
+		例，交换式变量
+		#!/bin/bash
+
+		read -p "please input your choicce (1/2/3): " cho
+
+		case $cho in
+		        "1")
+		                echo "you choice 1"
+		        ;;
+		        "2")
+		                echo "you choice 2"
+		        ;;
+		        "3")
+		                echo "you choice 3"
+		        ;;
+		        *)
+		                echo "you should input 1/2/3"
+		        ;;
+		esac
+
+		利用$1
+		#!/bin/bash
+
+		case $1 in
+		        "hello")
+		        echo "hello,how are you"
+		        ;;
+		        "")
+		        echo "you must enter something like -->${0} someword"
+		        ;;
+		        *)
+		        echo "user ${0} hello"
+		esac
+
+	function(函数)
+
+		function fname() {
+			程序段
+		}
+
+		注意函数一定要放在脚本的最前面,因为脚本是从上面下从左而右执行分析
+
+		例
+		#!/bin/bash
+
+		function printit() {
+		        echo -n "your choice is " #-n后续不换行在同一行显示
+		}
+
+
+		case $1 in
+		        "one")
+		                printit; echo $1 | tr  'a-z' 'A-Z' #大小写转换
+		        ;;
+		        "two")
+		                printit; echo $1 | tr  'a-z'  'A-Z'
+		        ;;
+		        "three")
+		                printit; echo $1 | tr  'a-z'  'A-Z'
+		        ;;
+		        *)
+		                echo "you should input  one/two/three"
+		        ;;
+		esac
+
+	function内置变量
+		#!/bin/bash
+
+		function printit() {
+		        echo  "your choice is ${1} " $$1与onw无关,要参考下面的命令执行
+		        #echo "your choice is ${1} ${2}"
+		}
+
+
+		case $1 in
+		        "one")
+		                printit 1 #带参数1
+		        ;;
+		        "two")
+		                printit 2
+		                #printit 2 3      #这样会传递两个参数进函数
+		        ;;
+		        "three")
+		                printit 3
+		        ;;
+		        *)
+		                echo "you should input  one/two/three"
+		        ;;
+		esac
+
+		#sh one -->1  sh two-->2 sh three-->3
+
+	loop(循环)
+		while do done, until do done  (不固定循环)
+
+		while [ conditin ] 
+		do          #循环开始
+			程序段
+		done		#循环结束
+
+		#while是当contition成立时,就进行循环
+
+		until [ condition ]
+		do
+			程序段
+		donw   
+		#until刚好相反,当条件满足时,终止循环
+
+		例 while
+		#!/bin/bash
+
+		while [ "$yn" != "yes" -a "$yn" != "YES" ]
+		do
+		        read -p "please enter yes: " yn
+		done
+		#只要不是输入yes或YES就一直循环让其输入,注意 -a
+
+		例until
+		#!/bin/bash
+		until [ "$yn" == "yes" -o "$yn" == "YES" ]
+		do
+		        read -p "plesa enter yes: " yn
+		done
+~       #只要是yes或YES，就停止输入
+
+		例计算1+2+3...+99+100
+		#!/bin/bash
+		declare -i sum=0
+		declare -i total=0
+		while [ "$sum" -le "100" ]
+		do
+		        total=$(( $total + $sum ))
+		        sum=$(( $sum + 1))
+		done
+
+		echo "1+2+3+....99+100= $total"
+
