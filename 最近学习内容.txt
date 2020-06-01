@@ -1843,7 +1843,7 @@ shell脚本
 			将shell.sh放入PATH指定目录内,如~/bin, 直接执行shell.sh
 		以bash程序来执行,通过bash shell.sh或 sh shell.sh执行(只需r权限)
 
-		#sh可以执行是因为/bin/sh其实是/bin/bash链路接文件,用bash是代表要直接以bash的功能执行shell.sh文件内的相关命令,sh有-n或-x参数来检查与跟综shell.sh语法的正确性
+		#sh可以执行是因为/bin/sh其实是/bin/bash链接文件,用bash是代表要直接以bash的功能执行shell.sh文件内的相关命令,sh有-n或-x参数来检查与跟综shell.sh语法的正确性
 
 	脚本范例
 	#/bin/bash
@@ -1856,7 +1856,7 @@ shell脚本
 	echo -e "Hello world \a \n "
 	exit 0
 
-	1 因为我们使用的是bash,所以必须要用!#/bin/bash来声明文件内使用bash语法,以#开头的行称为shebang行,那当这个程序执行时,就能够加载bash的相关环境配置文件(一般是非登录shell的~/.bashrc),并执行bash让我们下面的命令能够执行
+	1 因为我们使用的是bash,所以必须要用!#/bin/bash来声明文件内使用bash语法,以!#开头的行称为shebang行,那当这个程序执行时,就能够加载bash的相关环境配置文件(一般是非登录shell的~/.bashrc),并执行bash让我们下面的命令能够执行
 	2 程序内容说明,#用来注释说明,可以一些基本数据,脚本用途日期作者等
 	3 主要环境变量的声明,PATH或LANG等,这样程序就可以直接执行一些外部命令,而不必写绝对路径
 	4 主要程序
@@ -1903,7 +1903,7 @@ shell脚本
 		total=$(( ${num1} * ${num2} ))
 
 		echo "num1 * numb = $total"
-		#var=$((运算内空)),也可以declare -i total=${num1}*${num2},建议$(()),方便记忆而且小括号内可以加上空格符,而且bash shell默认仅支持到整数而已
+		#var=$((运算内容)),也可以declare -i total=${num1}*${num2},建议$(()),方便记忆而且小括号内可以加上空格符,而且bash shell默认仅支持到整数而已
 
 		取余echo $((13%3))
 		1
@@ -1941,7 +1941,7 @@ shell脚本
 		3. 两个文件之间的比较，如： test file1 -nt file2
 		-nt	(newer than)判断file1 是否比file2 新
 		-ot	(older than)判断file1 是否比file2 旧
-		-ef	判断file1 与file2 是否为同一文件，可用在判断hard link 的判定上。主要意义在判定，两个文件是否均指向同一个inode 哩！
+		-ef	判断file1 与file2 是否为同一文件，可用在判断hard link 的判定上。主要意义在判定，两个文件是否均指向同一个inode 
 		4. 关于两个整数之间的判定，例如test n1 -eq n2
 		-eq	两数值相等(equal)
 		-ne	两数值不等(not equal)
@@ -2052,5 +2052,121 @@ shell脚本
 		total have 2 参数
 		all name is 5 6
 
+	条件判断
+		if....then
 
+		单层,简单条件判断式
+			if [ 条件判断式 ]; then
+				当条件判断成立时,可以进行的命令内容
+			fi 
+
+		多层
+			if [ 条件判断式 ]; then
+				当条件判断成立时,可以进行的命令内容
+			else
+				当条件判断不成立时,可执行的命令
+			fi
+
+			if [ 条件判断式 ]; then
+				语句
+			elif [ 条件判断式 ]; then
+				语句
+			else
+				语句
+			fi
+
+		多括号[]之间以 && 或 || 来隔开,括呈间的&&或||与命令行执行的状态不同
+			&& 代表 and 
+			|| 代表 or
+
+		例
+		#!/bin/bash
+		read -p "please enter (y/n): " yn
+
+		if [ "$yn" == "y" ] || [ "$yn" == "Y" ]; then
+		        echo "ok,continue"
+		        exit 0
+		elif [ "$yn" == "n" ] || [ "$yn" == "N" ]; then
+		        echo "oh, stop"
+		        exit 0
+		else
+		        echo "i don't know what your choice is"
+
+		fi
+
+		例 利用$1变量
+		#!/bin/bash
+
+		if [ "$1" == "" ]; then
+		        echo "you need do it like --> ${0} something"
+		elif [ "$1" == "Hello" ]; then
+		        echo "Hello,how are you"
+		elif [ "$1" != "Hello" ]; then
+		        echo "you can only input 'Hello'"
+		else
+		        echo "i don't know what you do"
+		fi
+
+		检测端口打开
+		#!/bin/bash
+		#先将netstat -tunlp的结果数据存到内存当中,不用一直执行netstat
+		testfile="/dev/shm/netstat_check.txt"
+		netstat -tunlp > $testfile
+
+		testing=$(grep ":80" ${testfile})  #grep :80的结果放到变量中
+		if [ "$testing" != "" ]; then     #有数据说明Port打开,为空说明没有打开
+		        echo "80 port is open"
+		fi
+		testing=$(grep ":22" ${testfile})
+		if [ "$testing" != "" ]; then
+		        echo "22 port is open"
+		fi
+
+
+		testing=$(grep ":25" ${testfile})
+		if [ "$testing" != "" ]; then
+		        echo "25 port is open"
+		fi
+
+		testing=$(grep ":21" ${testfile})
+		if [ "$testing" != "" ]; then
+		        echo "21 port is open"
+		fi
+
+
+		输入退伍时间,算出剩余退伍天数
+		#!/bin/bash
+
+		read -p "please enter you 退伍 day in: " rday
+
+		#!/bin/bash
+
+		read -p "please enter you 退伍 day in: " rday
+
+		#判断输入格式
+		ruwu_day=$(echo $rday | grep "[0-9]\{8\}")
+		if [ "$ruwu_day" == "" ]; then
+		        echo "you should input 20200520"
+		        exit 1
+		fi
+
+		#退伍的时间变成总共秒数
+		declare -i rs=$(date --date="$rday" +%s)
+
+		#今天时间的总共秒数
+		declare -i ts=$(date +%s)
+
+		#剩余时间秒数
+		declare -i sw=$(( ${rs} -${ts} ))
+
+		#秒数换算成天数
+		declare -i day=$(( ${sw}/60/60/24 ))
+
+		if [ "$day" -lt "0" ]; then
+		        echo "你已退伍$((-1*${day}))天"
+		else
+		        echo "你还剩余 ${day} 天退伍"
+		fi
+
+		#秒数为自19700101累积而来的秒数
 
