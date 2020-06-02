@@ -2295,32 +2295,124 @@ shell脚本
 		donw   
 		#until刚好相反,当条件满足时,终止循环
 
-		例 while
-		#!/bin/bash
+			例 while
+			#!/bin/bash
 
-		while [ "$yn" != "yes" -a "$yn" != "YES" ]
-		do
-		        read -p "please enter yes: " yn
-		done
-		#只要不是输入yes或YES就一直循环让其输入,注意 -a
+			while [ "$yn" != "yes" -a "$yn" != "YES" ]
+			do
+			        read -p "please enter yes: " yn
+			done
+			#只要不是输入yes或YES就一直循环让其输入,注意 -a
 
-		例until
-		#!/bin/bash
-		until [ "$yn" == "yes" -o "$yn" == "YES" ]
-		do
-		        read -p "plesa enter yes: " yn
-		done
-~       #只要是yes或YES，就停止输入
+			例until
+			#!/bin/bash
+			until [ "$yn" == "yes" -o "$yn" == "YES" ]
+			do
+			        read -p "plesa enter yes: " yn
+			done
+	        #只要是yes或YES，就停止输入
 
-		例计算1+2+3...+99+100
-		#!/bin/bash
-		declare -i sum=0
-		declare -i total=0
-		while [ "$sum" -le "100" ]
-		do
-		        total=$(( $total + $sum ))
-		        sum=$(( $sum + 1))
-		done
+			例计算1+2+3...+99+100
+			#!/bin/bash
+			declare -i sum=0
+			declare -i total=0
+			while [ "$sum" -le "100" ]
+			do
+			        total=$(( $total + $sum ))
+			        sum=$(( $sum + 1))
+			done
 
-		echo "1+2+3+....99+100= $total"
+			echo "1+2+3+....99+100= $total"
 
+		for..do...done(固定循环)
+
+			for var in con1 con2 con3....
+			do
+				程序段
+			done
+
+			第一次循环时,$var内容为con1
+			第一次循环时,$var内容为con2
+			......
+
+			例分别输出动物名
+			#!/bin/bash
+
+			for animal in dad cat elephot
+			do
+			        echo "this is $animal"
+			done
+
+			例用id利用for循环查看账号
+			#!/bin/bash
+
+			for i in $(cat /etc/passwd | cut -d ':' -f 1)
+			do
+			        id $i
+			done
+			~         
+
+
+			例用Ping测试主机连线
+			#!/bin/bash
+			ip="192.168.1."
+			host=$(seq 1 20) #sed连续1到20,也可以用{1..20}代替
+
+			for i in $host
+			do
+			        ping -c 1 -w 1 ${ip}${i} &> /dev/null
+			        if [ "$?" == "0" ]; then
+			                echo "${ip}${i} is UP"
+			        else
+			                echo "${ip}${i} is DOWN"
+			        fi
+			done
+
+			例,输入一个目录,用for例出目录内的文件的权限
+			#!/bin/bash
+			read -p "please enter a dicrect name: " dic
+
+			#判断目录不为空与存在
+			if [ "${dic}" == "" -o ! -d "$dic" ]; then
+			        echo "you should enter a direct"
+			        exit 1
+			fi
+
+			file=$(ls $dic)
+
+			for i in $file
+			do
+			        test -r ${dic}/${i} && echo "$i have r"
+			        test -w ${dic}/${i} && echo "$i have w"
+			        test -x ${dic}/${i} && echo "$i have x"
+			done
+
+		for..do...done(数值算理)
+
+			for (( 初始值;限制值;赋值运算 ))
+			do 
+				程序段
+			done
+
+			#初始值,某个变量在循环当中的初始值,如i=1
+			#限制值,当变量的值在这个限制值的范围内,就继续进行循环,如i<=100
+			#赋值运算,每做一次循环,变量也变化,如i=i+1
+
+			例,输入一个数字n然后计算1+2+...n
+			#!/bin/bash
+
+			read -p "please enter a nmuber , i will count 1+2+....number : " nu
+
+			if [ "$nu" -le "0" ]; then
+			        echo "you shoul input a number > 0"
+			        exit 1
+			fi
+
+			declare -i sum=0
+
+			for (( i=1;$i <= $nu;i++))
+			do
+			         sum=$(($sum + $i))
+			done
+
+			echo "1+2+....+$nu = $sum"
