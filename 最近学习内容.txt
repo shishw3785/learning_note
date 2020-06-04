@@ -2500,5 +2500,78 @@ linux账号管理与ACL权限设置
 				8 账号失效时间
 				9 保留
 
-			
+			密码忘记
+				一般用户密码忘记可以用root通过passwd命令直接重置密码即可
+				root密码忘记
+					重启进入单人维护模式,系统会主动给予root权限的bash接口，再以passwd修改
+					以live cd启动后挂载根目录云修改/etc/shadow，将root的密码字段清空,重启空再修改密码
 
+		用户组
+			/etc/group
+			head -n 2 /etc/group
+			root:x:0:
+			bin:x:1:
+			
+			1 组名,3 GID 对应
+			2 用户组密码(很少用)
+			3 GID, /etc/passwd第四个字段使用的GID对应的用户组名,就是这里对应出来
+			4 此用户组支持的账号名称,一个账号可以加入多个用户组,某账号想加入此组,将账号填入这字段即可(新版的linux中,初始用户组的用户群已经不会加入这个字段)
+
+
+			有效用户组与初始用户组
+
+				/etc/passwd的第4栏的GID,就是所谓的初始用户组,用户一登录系统就会马上拥有这个用户组的相关权限
+
+				[root@localhost ~]# grep dmtsai /etc/passwd /etc/group /etc/gshadow
+				/etc/passwd:dmtsai:x:1003:1004::/home/dmtsai:/bin/bash
+				/etc/group:users:x:100:dmtsai
+				/etc/group:dmtsai:x:1004:
+				/etc/gshadow:users:::dmtsai
+				/etc/gshadow:dmtsai:!::
+
+				#在passwd里看到,dmtsai的GID为1004,/etc/group对应下的1004为dmtsai,这就是初始用户组,所以并不需要在第4字段写入该账号
+				而users并非dmtsai的初始用户组,所以要第第4栏加入,这样dmtsai才够加入users这个组  #usermod -a -G users dmtsai
+				因此dmtsai账号同时支持dmtsai与users这两个用户组,在rwx文件时,针对用户组部分，只要是users与dmtsai拥用的功能,dmtsai用户都拥有
+				新文件的用户组是哪个还要看有效用户组(effctive group)
+
+				[dmtsai@localhost ~]$ groups #查看有交与支持的用户组 
+				dmtsai users
+				#支持两个组，有效用户组为第一个dmtsai
+
+				touch test
+				[dmtsai@localhost ~]$ ll
+				total 0
+				-rw-rw-r--. 1 dmtsai dmtsai 0 Jun  2 21:26 test
+				#有效用户组新建文件的属性都是dmtsai
+			
+				修改有效用户组,前提是想要切换的用户组必须是已经有支持的用户组
+				[dmtsai@localhost ~]$ newgrp users
+				[dmtsai@localhost ~]$ groups 
+				users dmtsai
+				[dmtsai@localhost ~]$ touch test2
+				[dmtsai@localhost ~]$ ll test2
+				-rw-r--r--. 1 dmtsai users 0 Jun  2 21:35 test2
+				[dmtsai@localhost ~]$ groups
+				users dmtsai
+				[dmtsai@localhost ~]$ exit
+				exit
+				[dmtsai@localhost ~]$ groups 
+				dmtsai users
+
+				#注意newgrp可以修改用户的有效用户组,而且是另外以一个shell来提供这个功能的,因此要回到原来的环境中要exit
+
+				用户加入不同的用户组有两人方法,一个是root利用usermod，另一个是通过用户组管理员以gshadow帮加入
+
+				[root@localhost ~]# head -n 3 /etc/gshadow
+				root:::
+				bin:::
+				daemon:::
+
+				1 组名
+				2 密码, 如为！或 空表示无合法密码,所以无用户组管理员
+				3 用户组管理员的账号
+				4 有加入该用户组的账号(与/etc/group相同)
+
+				gshadow最大的功能就是建立用户组管理员,不过现在有sudo，这功能少用
+
+		账号管理
