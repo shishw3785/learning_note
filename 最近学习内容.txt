@@ -2575,3 +2575,126 @@ linux账号管理与ACL权限设置
 				gshadow最大的功能就是建立用户组管理员,不过现在有sudo，这功能少用
 
 		账号管理
+			新增用户
+			useradd [-u UID] [-g 初始用户组] [ -G 次要用户组] [-mM] \
+				[-c 说明栏] [-d 家目录绝对路径] [-s shell] 账号
+
+				-u uid,直接指定一个特定的UID给账号
+				-g 接的是初始用户组,这个用户组的GID会被放到/etc/passwd的第4栏位
+				-G 后面接的用户组则是该账号还可加入的用户组
+				-M 强制,不要建立家目录(系统账号默认值)
+				-m 强制,要建立使用者家目录(一般账号默认值)
+				-c /etc/passwd第5栏,随便设置
+				-d 指定某个目录成为家目录,需不使用默认值，要使用绝对路径
+				-r 建立一个系统账号
+				-s 后面接一个shell，默认/bin/bash
+				-e 后面接一个日期,格式YYYY-MM-DD,账号失效日期
+				-f shadow第7栏选项,指定密码是否会失效,0为立刻失效
+					-l 永不失效
+
+				例用默认值建立一个账号
+				[root@localhost ~]# useradd virbd1
+				[root@localhost ~]# ll -d /home/virbd1/
+				drwx------. 2 virbd1 virbd1 62 Jun  2 22:25 /home/virbd1/
+				[root@localhost ~]# grep virbd1 /etc/passwd /etc/shadow /etc/group
+				/etc/passwd:virbd1:x:1004:1005::/home/virbd1:/bin/bash
+				/etc/shadow:virbd1:!!:18415:0:99999:7:::
+				/etc/group:virbd1:x:1005:
+				#注意会在group里面加入一个与账号名称一样的组名,会在/home下面建立一个与账号同名的目录作为家目录，权限为700
+
+				例已知有个users用户组,且UID1500不存在,请用users为初始用户组,1500为UID建立一个vbird2的账号
+				useradd -u 1500 -g users vbird2
+				#注意,因为是指定一个存在的用户组做为初始用户组,所以就不会在group里主动建立与账号同名的用户组了
+
+				例建立系统账号
+				 useradd -r vbird3
+				[root@localhost ~]# ll -d /home/vbird3
+				ls: cannot access /home/vbird3: No such file or directory
+				[root@localhost ~]# grep vbird3 /etc/passwd /etc/shadow /etc/group
+				/etc/passwd:vbird3:x:996:993::/home/vbird3:/bin/bash
+				/etc/shadow:vbird3:!!:18415::::::
+				/etc/group:vbird3:x:993:
+				#系统账号uid一般应该小于1000,且默认主动不会建立家目录
+
+			useradd参考文件
+			root@localhost skel]# useradd  -D #默认值参考
+			GROUP=100
+			HOME=/home
+			INACTIVE=-1
+			EXPIRE=
+			SHELL=/bin/bash
+			SKEL=/etc/skel #家目录的内容数据参考目录,也可以增加文件
+			CREATE_MAIL_SPOOL=yes #建立用户的mailbox,如/var/spool/mail/vbird1
+
+			注意GROUP=100,针对用户组角度有两种机制
+				私有用户组机制,系统会建立一个与账号同名的用户组给用户作为初始用户组,比较安全(centos使用私有用户组等)
+				公共用户组机制,每个账号都属于user这个用户组(GID)
+
+			uid与gid参考文件
+			root@localhost skel]# cat /etc/login.defs  | grep -v "^$" | grep -v '^#'
+			MAIL_DIR	/var/spool/mail
+			PASS_MAX_DAYS	99999
+			PASS_MIN_DAYS	0
+			PASS_MIN_LEN	5
+			PASS_WARN_AGE	7
+			UID_MIN                  1000
+			UID_MAX                 60000
+			SYS_UID_MIN               201
+			SYS_UID_MAX               999
+			GID_MIN                  1000
+			GID_MAX                 60000
+			SYS_GID_MIN               201
+			SYS_GID_MAX               999
+			CREATE_HOME	yes
+			UMASK           077
+			USERGROUPS_ENAB yes
+			ENCRYPT_METHOD SHA512 
+			#系统设置一个账号uid时,会先是参考uid_min最小值后再找出passwd最大uid数值,两者相比找出最大的再加1就是新账号的UID
+			USERGROUPS_ENAB的功能是如果使用userdel删除一个账号,且该账号所属的初始用户组已经没有人隶属于该用户组了,那么就删除掉该用户组
+
+
+		passwd 
+			修改密码
+			--stdin 可以通过来自前一个管道的数据,作为密码输入,对shell脚本有帮助
+			-l lock的意思,会将/etc/shadow第二栏最前面加上!使密码失效
+			-u unlock
+			-S 列出密码相关参数
+			-n 后接天数,shadow第4栏位,多久不可修改密码
+			-x 后接天数,shadow第5栏位,多久内必须修改密码
+			-w 后接天数,shadow第6栏位,密码过期前的警告天数
+			-i 后接天数,shadow第7栏位,密码失效日期
+
+			passwd 账号 #修改一般账号密码,后不接账号为修改自己的密码
+				密码不能与账号相同
+				密码尽量不要选用字典里面出现的字符串
+				密码必须超过8个字符
+				密码尽量使用大小写符,数字,特殊字符$ - 等组合
+
+			例用--stdin建立密码
+			echo "abc123456" | passwd --stdin vbird2
+				#缺点会在命令历史中出现,通常配合shell脚本
+
+			passwd -S vbird2
+			vbird2 PS 2020-06-02 0 99999 7 -1 (Password set, SHA512 crypt.)
+			#密码建立时间20200602,99999修改天数,7警告日数与密码不会失效-1
+
+			例管理vbird2密码使具有60天修改,密码过期10天后账号失效
+			[root@localhost pam.d]# passwd -x 60 -i 10 vbird2
+			Adjusting aging data for user vbird2.
+			passwd: Success
+			[root@localhost pam.d]# passwd -S vbird2
+			vbird2 PS 2020-06-02 0 60 7 10 (Password set, SHA512 crypt.)
+
+			锁住用户
+			[root@localhost pam.d]# passwd -l vbird2
+			Locking password for user vbird2.
+			passwd: Success
+			[root@localhost pam.d]# passwd -S vbird2
+			vbird2 LK 2020-06-02 0 60 7 10 (Password locked.)
+			[root@localhost pam.d]# grep 'vbird2' /etc/shadow
+			vbird2:!!$6$.CAwZp2y$fltb7soZ6a2gY29ARCBleF7KjToV9GGrcEqX8n7.ia2dH8L.oZLRXwtFBFxYHUG5mgQCgr8IVySQyA6oresEn1:18415:0:60:7:10:: 
+			[root@localhost pam.d]# passwd -u vbird2  #解锁
+			Unlocking password for user vbird2.
+			passwd: Success
+
+			#锁住用户其实是在shadow第二栏加了两个！,
