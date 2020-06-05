@@ -2698,3 +2698,59 @@ linux账号管理与ACL权限设置
 			passwd: Success
 
 			#锁住用户其实是在shadow第二栏加了两个！,
+
+			chage
+				chage -l vbird2
+				Last password change					: Jun 02, 2020
+				Password expires					: Aug 01, 2020
+				Password inactive					: Aug 11, 2020
+				Account expires						: never
+				Minimum number of days between password change		: 0
+				Maximum number of days between password change		: 60
+				Number of days of warning before password expires	: 7
+
+				chage可以更详细的显示密码参数,也可以修改设置值
+
+				例用户一登录就强制它们一定要修改密码后才能使用
+				[root@localhost pam.d]# useradd agetest
+				[root@localhost pam.d]# echo "agetest" | passwd --stdin agetest 
+				Changing password for user agetest.
+				passwd: all authentication tokens updated successfully.
+				[root@localhost pam.d]# chage -d 0 agetest 
+				[root@localhost pam.d]# chage -l agetest 
+				Last password change					: password must be changed
+				Password expires					: password must be changed
+				Password inactive					: password must be changed
+
+			usermod 
+				账号参数微调
+
+				让账号失效
+				usermod -e "2020-6-30" vbird2
+				[root@localhost ~]# chage -l vbird2
+				Last password change					: Jun 02, 2020
+				Password expires					: Aug 01, 2020
+				Password inactive					: Aug 11, 2020
+				Account expires						: Jun 30, 2020
+
+				为vbird3创建家目录
+				[root@localhost ~]# ll -d /home/vbird3
+				ls: cannot access /home/vbird3: No such file or directory
+				[root@localhost ~]# cp -a /etc/skel /home/vbird3
+				[root@localhost ~]# chown -R vbird3:vbird3 /home/vbird3
+				[root@localhost ~]# chmod 700 /home/vbird3
+
+				#chown -R 连同家目录的使用者/用户组属性都一起修改
+				#chmod没有-R,因为仅修改目录的权限而非内部文件的权限
+
+			userdel
+				删除用户
+
+				#连同家目录一起删除
+				userdel -r vbird2
+				userdel: user vbird2 is currently used by process 15027
+
+				#注意如果账户只是暂时不用,可以将passwd的账号失效日期(第8字段)为0即可,确认账号真的不需要再删除,可以用find / -user username来查看整个系统属于username的文件
+
+		用户功能
+
