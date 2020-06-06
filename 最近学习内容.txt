@@ -2753,4 +2753,82 @@ linux账号管理与ACL权限设置
 				#注意如果账户只是暂时不用,可以将passwd的账号失效日期(第8字段)为0即可,确认账号真的不需要再删除,可以用find / -user username来查看整个系统属于username的文件
 
 		用户功能
+			 id
+			uid=0(root) gid=0(root) groups=0(root) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+			#可以查看uidgid与支持的用户组,context是selinux先不理
+
+			id vbird100
+			id: vbird100: no such user
+			#也可以利用id判断用户是否存在
+
+			finger
+				查看用户相关信息
+			chfn
+				change finger
+			chsh
+				change shell
+			#以上三个少用
+
+		新增与删除用户组
+			group
+				-g 后接特定GID,指定直接设置GID
+				-n 建立系统用户组
+
+				groupadd group1
+
+			groupmod
+				-g 修改即有GID
+				-n 修改即有的用户组名称
+
+				修改group1的名称为mygroup，GID为201
+				groupmod -g 201 -n mygroup group1 
+					#不要随意改GID,造成资源错乱
+
+			groupdel
+				删除用户组
+				groupdel mygroub
+
+				groupdel vbird1
+				groupdel: cannot remove the primary group fo user 'vbird1'
+				#不能删除,原因某个账号的初始用户组使用该用户组
+					删除方法
+						修改vbird1 GID
+						删除vbird1这个用户
+
+		用户组管理员功能
+			gpasswd
+				关于系统管理员(root)做的操作
+				gpasswd groupname
+				gpasswd [-A user1,...] [-M user3,...] groupname
+				gpasswd [-rR] groupname
+
+				  : 若没有任何参数,表示设置groupname密码
+				  -A 将groupname的管理权交由后面的使用者管理
+				  -M 将某些账号加入这个用户组
+				  -r 将groupname的密码删除
+				  -R 让groupname的密码失效
+
+				关于用户组管理员做的操作
+					-a 将某位使用者加入到groupname这个用户组中
+					-d 将某位使用者删除出用户组
+
+					groupadd testgroup #添加一个用户组
+					gpasswd testgroup #设置用户组密码
+					[root@localhost ~]# gpasswd -A vbird1 testgroup #加入用户组管理员为vbird1
+					[root@localhost ~]# grep testgroup /etc/group /etc/gshadow
+					/etc/group:testgroup:x:1502:
+					/etc/gshadow:testgroup:$6$atXSm.BoB$XmXx4ZF1jhMjVTobmBHo18alp4r2vtkULI45iHDuya7bPcLicXd6Qx.bwV9UYcGHAmnsJxy/xX7OBppPi82Xf1:vbird1:
+					[root@localhost ~]# su - vbird1
+					[vbird1@localhost ~]$ id vbird1
+					uid=1502(vbird1) gid=1503(vbird1) groups=1503(vbird1)
+					[vbird1@localhost ~]$ gpasswd -a vbird1 testgroup #用户组管理员给组加入成员
+					Adding user vbird1 to group testgroup
+					[vbird1@localhost ~]$ id
+					uid=1502(vbird1) gid=1503(vbird1) groups=1503(vbird1) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+					[vbird1@localhost ~]$ gpasswd -a vbird3 testgroup  #用户组管理员给组加入成员
+					Adding user vbird3 to group testgroup
+					[vbird1@localhost ~]$ grep testgroup /etc/group
+					testgroup:x:1502:vbird1,vbird3
+
+
 
