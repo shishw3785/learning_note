@@ -2812,23 +2812,125 @@ linux账号管理与ACL权限设置
 					-a 将某位使用者加入到groupname这个用户组中
 					-d 将某位使用者删除出用户组
 
-					groupadd testgroup #添加一个用户组
-					gpasswd testgroup #设置用户组密码
-					[root@localhost ~]# gpasswd -A vbird1 testgroup #加入用户组管理员为vbird1
-					[root@localhost ~]# grep testgroup /etc/group /etc/gshadow
-					/etc/group:testgroup:x:1502:
-					/etc/gshadow:testgroup:$6$atXSm.BoB$XmXx4ZF1jhMjVTobmBHo18alp4r2vtkULI45iHDuya7bPcLicXd6Qx.bwV9UYcGHAmnsJxy/xX7OBppPi82Xf1:vbird1:
-					[root@localhost ~]# su - vbird1
-					[vbird1@localhost ~]$ id vbird1
-					uid=1502(vbird1) gid=1503(vbird1) groups=1503(vbird1)
-					[vbird1@localhost ~]$ gpasswd -a vbird1 testgroup #用户组管理员给组加入成员
-					Adding user vbird1 to group testgroup
-					[vbird1@localhost ~]$ id
-					uid=1502(vbird1) gid=1503(vbird1) groups=1503(vbird1) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
-					[vbird1@localhost ~]$ gpasswd -a vbird3 testgroup  #用户组管理员给组加入成员
-					Adding user vbird3 to group testgroup
-					[vbird1@localhost ~]$ grep testgroup /etc/group
-					testgroup:x:1502:vbird1,vbird3
+				groupadd testgroup #添加一个用户组
+				gpasswd testgroup #设置用户组密码
+				[root@localhost ~]# gpasswd -A vbird1 testgroup #加入用户组管理员为vbird1
+				[root@localhost ~]# grep testgroup /etc/group /etc/gshadow
+				/etc/group:testgroup:x:1502:
+				/etc/gshadow:testgroup:$6$atXSm.BoB$XmXx4ZF1jhMjVTobmBHo18alp4r2vtkULI45iHDuya7bPcLicXd6Qx.bwV9UYcGHAmnsJxy/xX7OBppPi82Xf1:vbird1:
+				[root@localhost ~]# su - vbird1
+				[vbird1@localhost ~]$ id vbird1
+				uid=1502(vbird1) gid=1503(vbird1) groups=1503(vbird1)
+				[vbird1@localhost ~]$ gpasswd -a vbird1 testgroup #用户组管理员给组加入成员
+				Adding user vbird1 to group testgroup
+				[vbird1@localhost ~]$ id
+				uid=1502(vbird1) gid=1503(vbird1) groups=1503(vbird1) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+				[vbird1@localhost ~]$ gpasswd -a vbird3 testgroup  #用户组管理员给组加入成员
+				Adding user vbird3 to group testgroup
+				[vbird1@localhost ~]$ grep testgroup /etc/group
+				testgroup:x:1502:vbird1,vbird3
+
+				例用户pro1 pro2 pro3为同一个项目计划的开发人员,让这三个用户在同一个目录下工作,但这三个目录还是拥有自己的家目录与基本的私用户组,工作目录为/srv/projecta
+
+				[root@localhost ~]# mkdir /srv/projecta
+				[root@localhost ~]# groupadd progroup #建立公共用户组
+				
+			
+				[root@localhost ~]# chown root:progroup -R /srv/projecta/
+				[root@localhost ~]# ll -d /srv/projecta/
+				drwxr-xr-x. 2 root progroup 6 Jun  3 14:38 /srv/projecta/
+				[root@localhost ~]# useradd -G progroup pro1 #让账号支持用户组
+				[root@localhost ~]# useradd -G progroup pro2			root@localhost ~]# useradd -G progroup pro3
+				[root@localhost ~]# grep 'progroup' /etc/group
+				progroup:x:1508:pro1,pro2,pro3		
+				[root@localhost ~]# chmod 2770 /srv/projecta/ #设置权限(包括SGID,这样用户新建的文件用户组属于公共用户组)
+				[root@localhost ~]# ll -d /srv/projecta/
+				drwxrws---. 2 root progroup 6 Jun  3 14:38 /srv/projecta/
+
+				账号设置密码省略
+
+				#以上例子不能针对某个特定账户设置专属权限,如myuser3我只想让其能查看不能修改数据,让其不加入公共组给目录其它权限rx，但这样其它用户也可以访问数据
 
 
+		主机的详细权限规划 ACL
+			传统的linux权限只能会对一个用户,一个用户组,非此用户组的三种身份权限设置
+
+			ACL可以针对单一用户,用户组,单一文件或目录等来设置权限
+
+			ACL已经默认加入了所有常见的的Linux文件系统的挂载参数中
+
+			查看是否支持ACL
+				dmesg | grep -i acl  #有数据即可
+
+			setfacl #设置某个目录或文件的ACL
+				-m 设置后续的ACL参数给文件使用,不可与-x合用
+				-x 删除后续的ACL参数,不可与-x合用
+				-b 删除所有的ACL设置参数
+				-k 删除(默认的)ACL参数
+				-R 递归设置ACL,即包括子目录都会被设置起来
+				-d 设置默认acl参数,只对目录有效,在该目录新建的数据会引用止默认值
+
+			例针对特定使用者的方式
+			touch acl_test1
+			[root@localhost ~]# ll acl_test1 
+			-rw-r--r--. 1 root root 0 Jun  3 16:34 acl_test1
+			  
+			[root@localhost ~]# setfacl -m u:vbird1:rx acl_test1 
+			[root@localhost ~]# ll acl_test1 
+			-rw-r-xr--+ 1 root root 0 Jun  3 16:34 acl_test1 #注意后面有个+,且与原本的644权限有差异
+			[root@localhost ~]# setfacl -m u::rwx acl_test1 #无用户说明是设置该文件拥有者
+			[root@localhost ~]# ll acl_test1 
+			-rwxr-xr--+ 1 root root 0 Jun  3 16:34 acl_test
+
+			查看ACL
+			getfacl acl_test1 
+			# file: acl_test1 #文件明
+			# owner: root     #文件拥有者
+			# group: root     #文件所属用户组
+			user::rwx         #使用者列表为空代表文件拥有者的权限
+			user:vbird1:r-x   #针对vbird1的权限为rx
+			group::r--        #针对文件用户组的权限设置为r
+			mask::r-x         #此文件默认有效权限(mask)
+			other::r--        #其他人权限
+
+			针对特定用户组的设置
+			setfacl -m g:mygroup1:rx acl_test1 
+			[root@localhost ~]# getfacl acl_test1 
+			# file: acl_test1
+			# owner: root
+			# group: root
+			user::rwx
+			user:vbird1:r-x
+			group::r--
+			group:mygroup1:r-x   #新增
+			mask::r-x
+
+			针对有效权限设置
+			setfacl -m m:r acl_test1 
+			[root@localhost ~]# getfacl acl_test1 
+			# file: acl_test1
+			# owner: root
+			# group: root
+			user::rwx
+			user:vbird1:r-x			#effective:r--
+			group::r--
+			group:mygroup1:r-x		#effective:r--
+			mask::r--
+			other::r--
+
+			#mask代表用户或用户组所设置的权限必须要存在于mask的权限设置范围内才会生效,上面的例子mask仅为r，所以vbird1与mygroup虽有设置rx,但却只有r权限,通常mask设置rwx
+
+			承接pro项目例子,让myuser1只能查看目录数据,不能修改
+			setfacl -m u:myuser1:rx /srv/projecta #设置rx权限
+			[root@localhost ~]# su - myuser1
+			Last login: Wed Jun  3 17:04:33 CST 2020 on pts/0
+			[myuser1@localhost ~]$ cd /srv/projecta/
+			[myuser1@localhost projecta]$ ll
+			total 0
+			[myuser1@localhost projecta]$ ls -la  #确实可以查询数据(也可以复制到其它目录)
+			total 0
+			drwxrws---+ 2 root progroup  6 Jun  3 14:38 .
+			drwxr-xr-x. 5 root root     52 Jun  3 14:38 ..
+			[myuser1@localhost projecta]$ touch test  #不能修改
+			touch: cannot touch ‘test’: Permission denied
 
