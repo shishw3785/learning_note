@@ -2934,3 +2934,55 @@ linux账号管理与ACL权限设置
 			[myuser1@localhost projecta]$ touch test  #不能修改
 			touch: cannot touch ‘test’: Permission denied
 
+			例新建文件查看属性
+			[root@localhost projecta]# ll
+			
+			drwxr-sr-x. 2 root progroup 18 Jun  3 17:19 abc
+			-rw-r--r--. 1 root progroup  6 Jun  3 17:07 test
+			#发现文件后面并没有+号,代表acl属性没有继承,其它人属性还有
+
+			使用默认权限设置让acl在目录下面的数据都有继承功能
+			setfacl -m d:u:myuser1:rx /srv/projecta 
+
+			[root@localhost projecta]# ll
+			total 0
+			drwxrws---+ 2 root progroup 6 Jun  3 21:48 abc
+			-rw-rw----+ 1 root progroup 0 Jun  3 21:40 zzz1
+			drwxrws---+ 2 root progroup 6 Jun  3 21:40 zzz2
+			[root@localhost projecta]# getfacl abc
+			# file: abc
+			# owner: root
+			# group: progroup
+			# flags: -s-
+			user::rwx
+			user:myuser1:r-x
+			group::rwx
+			mask::rwx
+			other::---
+			default:user::rwx
+			default:user:myuser1:r-x
+			default:group::rwx
+			default:mask::rwx
+			default:other::---
+
+			#default也有了，继承成功,myuser1继续拥有子目录与文件的acl权限
+
+			例,承接上面,取消myuser1的设置,让pro3这个用户无法使用该目录
+			setfacl -x u:myuser1 /srv/projecta #取消myuser1的ACL设置
+			setfacl -x d:myuser1 /srv/projecta #取消myuser1的ACL默认值设置
+
+			setfacl -m u:pro3:- /srv/projecta
+				#设置一个用户或用户组没有权限时不能留空白,用-
+			[myuser1@localhost ~]$ getfacl /srv/projecta/
+			getfacl: Removing leading '/' from absolute path names
+			# file: srv/projecta/
+			# owner: root
+			# group: progroup
+			# flags: -s-
+			user::rwx
+			user:pro3:--- #pro3没有任何权限
+
+
+
+
+
