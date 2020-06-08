@@ -2982,6 +2982,29 @@ linux账号管理与ACL权限设置
 			user::rwx
 			user:pro3:--- #pro3没有任何权限
 
+		用户身份切换
+			一般情况下用一般用户操作,需要用户root权限时再切换
+
+			像apache这些程序可以建立一个名为apache的用户来启动apache,相对安全,程序被攻击,不至于系统会损坏
+
+			su
+				切换身份
+
+				- 单纯使用su - 代表使用login-shell的变量文件读取方式来登录系统,后无账号则是切换为root
+				-l 与- 类似,也是login-shell登录,但后面要接账号
+				-c 仅进行一次命令,所以-c后面可接命令
+
+				一般用户切换为root,要用
+					su -
+				root切换为其它等用
+					su -l 账号
+
+				su - -c "head -n 3 /etc/shadow" #仅用root执行一次命令
+
+				su缺点是一般用户都要知道root的密码,不安全
+
+			sudo
+
 
 
 
