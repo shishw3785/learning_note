@@ -3004,7 +3004,66 @@ linux账号管理与ACL权限设置
 				su缺点是一般用户都要知道root的密码,不安全
 
 			sudo
+				一开始系统默认的只有root可以执行
+				-b 将后续的命令放到后台中让系统自行执行,不与目前的shell产生影响
+				-u 后面可以接欲切换的使用者,若无此项则代表切换身份为root
 
+				例以sshd身份在/tmp下建立一个mysshd文件
+				sudo -u sshd touch /tmp/mysshd  #用root创建然后再chown也行
+
+				以vbird1身份建立~vbird1/www并于其中建立index.html文件
+				sudo -u vbird1 sh -c "mkdir ~vbird1/www;cd ~vbird1/www; \
+				echo 'This is a test'>index.html"
+					#~vbird1就是概用户根目录
+
+			visudo
+				能否执行sudo与/etc/sudoers设置有关,不建议用vi去编辑/etc/sudoers,使用visudo，退出visudo退其会自行检测语法正确性
+
+				单一用户可使用root所有命令
+				visudo
+				....
+				root    ALL=(ALL)       ALL
+				vbird1  ALL=(ALL)       ALL
+				#各字段意思 
+					1 root 操作系统的哪个账号可以使用sudo
+					2 ALL 登录者来源主机名,设置可以指定客户端计算机(别的机子来源),默认值root可来自任何一台主机
+					3 ALL 可切换的身份 这个账号可以切换成什么身份来执行后续的命令,默认root可以切换任何人
+					4 ALL 可执行的命令,可用该身份执行什么命令,命令要使用绝对路径,默认root可以切换任何身份且进行任何命令
+
+				上面vbird1加入sudo了
+				例
+					[vbird1@localhost ~]$ sudo tail -n 1 /etc/shadow
+						#再输入密码
+
+				
+				利用wheel用户组以及免密码的功能处理visudo
+				visudo
+				....
+				%wheel  ALL=(ALL)       ALL
+
+				# % 在最左边加上%代表后面接的是一个用户组
+
+				usermod -a -G wheel pro1 #让pro1加入wheel组，这样pro1就拥有sudo权限了
+
+
+				sudo免密
+				# %wheel        ALL=(ALL)       NOPASSWD: ALL
+					#把#去掉利用此条设置
+
+				有限制的命令操作
+				myuser1 ALL=(root)       !/usr/bin/passwd, /usr/bin/passwd [A-Za-z]*, !/usr/bin/passwd root
+					#给myuser1拥用给其它用户修改密码的权限,且禁止修改root密码
+
+				别名设置visudo
+				User_Alias ADMPW = pro1, pro2, pro3
+				Cmnd_Alias ADMPWCOM = !/usr/bin/passwd, /usr/bin/passwd [A-Za-z]*, !/usr/bin/passwd root
+				ADMPW   ALL=(root)   ADMPWCOM
+				#ADMPW为创建的用户(要大写),后接实际用户，AMDPWCOM为命令别名(大写)
+
+				sudo搭配su
+				例让用户不用输入root密码而是输入自己的密码切换成root
+				User_Alias ADMPW = pro1, pro2, pro3
+				ADMPW   ALL=(root)   /bin/su -
 
 
 
