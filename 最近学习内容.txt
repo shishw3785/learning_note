@@ -3092,3 +3092,102 @@ linux账号管理与ACL权限设置
 				会话阶段(session)
 
 			详细参考鸟哥Linux13章账号管理
+
+
+			其它文件
+				limits.conf
+					与PAM相关的文件,ulimit功能系统管理员可以通过PAM管理,ulimit命令执行只是针对当前的SHELL生效,limits.conf可以针对用户或用户组
+
+					例设置vbird1只能建立100M的文件，且大于9000会警告
+					#@student        -       maxlogins       4
+					vbird1		soft	fsize	9000
+					vird1 		hard    fsize   10000
+					#第一栏用户或用户组(前面要加@),第4栏为限制的值,单位kb
+
+					测试
+					[vbird1@localhost ~]$ dd if=/dev/zero of=test bs=1M count=110
+					File size limit exceeded
+
+					例限制用户组，每次仅能有一个使用者登录系统（maxlogins)
+					@pro1 	hard	maxlogins	1
+					#注意只对初始用户组有效
+
+					limit.conf修改完成后不用重启任何服务就生效,但是对已登录的用户无效,要下一次登录才生效,因为PAM是程序调用时才设置的
+
+				/var/log/secure  /var/log/message
+					如发生无法登录或其它错误时,可以查看这两个日志文件
+
+		主机上的用户信息传递
+
+			查询用户
+			[root@localhost ~]# w    #与who差不多
+			 14:28:35 up 8 days,  7:39,  3 users,  load average: 0.00, 0.01, 0.05
+			USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+			root     tty1                      22May20  6days  0.71s  0.71s -bash
+			root     pts/0    192.168.1.7      05Jun20  6days  0.49s  0.12s -bash
+			root     pts/1    192.168.1.7      05Jun20  3.00s  0.08s  0.00s w
+
+			[root@localhost ~]# lastlog  #与last相似
+			Username         Port     From             Latest
+			root             pts/1    192.168.1.7      Fri Jun  5 11:10:57 +0800 2020
+			bin                                        **Never logged in**
+			daemon                                     **Never logged in**
+			adm                                        **Never logged in**
+			#可查看所有用户(包括系统用户)登录时间
+
+			用户对谈
+				write
+					针对一个用户来发送信息
+				write root tty1
+				hello
+				....      #control + d完成发送的信息
+
+				root用户可以mesg 拒绝收一其它用户的信息,但一般用户不能拒绝root发的信息
+				mesg n   
+				mesg #查看mesg是y或n
+
+
+				wall
+					对所有系统上面的用户发送信息
+
+				wall "hello, i will shutdown server..."
+					#用"字符发送消息",回车即发送完成
+
+			mail
+				wall write要等到用户在线才能收信息
+
+				发送邮件
+				mail -s "邮件标题" username@localhost
+					寄给本机用户不用@localhost
+
+				mail -s "hello" vbird1
+				hello
+				nice to meet you
+				you
+				.    #结束标志
+				EOT
+
+				利用数据流重定向写入内容
+				mail -s "bashrc file content" vbird1 < ~/.bashrc
+
+				通过管道将ls -al ~内容传给邮件
+				ls -al ~ | mail -s "myfile" vbird1
+
+				收邮件
+				[root@localhost ~]# mail
+				Heirloom Mail version 12.5 7/5/10.  Type ? for help.
+				"/var/spool/mail/root": 2 messages
+				>   1 leison@localhost.loc  Wed Jun  3 22:56  17/698   "*** SECURITY information for "
+				    2 root                  Thu Jun 11 20:00  63/3163  "myfile"
+				& 
+
+				# & 为提示符
+				  ? 可获得帮助
+
+				 常用命令
+				 	h 列出邮件标头,如要查看40封邮件左右的邮件标头 h 40
+				 	d 删除邮件, 如删除第10封 d10 , 删除第20~40，d20-40
+				 	s 将邮件保存为文件, 如保存第5封, s 5 ~/mail.file
+				 	x 不做任何操作退出,无论刚刚是删除还是阅读x后都会无效
+				 	q 保存后退出
+
