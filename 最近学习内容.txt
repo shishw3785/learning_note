@@ -3065,6 +3065,30 @@ linux账号管理与ACL权限设置
 				User_Alias ADMPW = pro1, pro2, pro3
 				ADMPW   ALL=(root)   /bin/su -
 
+		PAM模块(插入式验证模块)
+			一个API,它提供一连串的验证,只要用户将验主阶段的需求告知PAM后,PAM就能够返回用户验证的结果(成功或失败),它是一套验证机制,可以给其它程序调用
 
+			如passwd调用PAM的流程
+				用户开始执行/usr/bin/passwd这个程序,并输入密码
+				PAM模块会到/etc/pam.d找寻与程序(passwd)同名的配置文件
+				将验证结果(成功,失败,其他信息)返回给passwd程序
+				passwd程序会根据PAM返回的结果决定下一个操作(重新输入新密码或通过)
 
+				cat  /etc/pam.d/passwd
+				#%PAM-1.0       #版本说明
+				auth       include	system-auth #每一行都是一个验证的过程
+				account    include	system-auth
+				password   substack	system-auth
+				-password   optional	pam_gnome_keyring.so use_authtok
+				password   substack	postlogin
+				验证类别    控制标准   PAM模块与该模块的参数
 
+				#include是包含引用后面的system-auth设置
+
+			PAM的验证机制流程
+				验证阶段(auth)
+				授权阶段(account)
+				密码阶段(password)
+				会话阶段(session)
+
+			详细参考鸟哥Linux13章账号管理
