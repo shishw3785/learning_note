@@ -1846,7 +1846,7 @@ shell脚本
 		#sh可以执行是因为/bin/sh其实是/bin/bash链接文件,用bash是代表要直接以bash的功能执行shell.sh文件内的相关命令,sh有-n或-x参数来检查与跟综shell.sh语法的正确性
 
 	脚本范例
-	#/bin/bash
+	#!/bin/bash
 	#program
 	#       this program show "hello world" in your screen
 	#History:
@@ -1856,7 +1856,7 @@ shell脚本
 	echo -e "Hello world \a \n "
 	exit 0
 
-	1 因为我们使用的是bash,所以必须要用!#/bin/bash来声明文件内使用bash语法,以!#开头的行称为shebang行,那当这个程序执行时,就能够加载bash的相关环境配置文件(一般是非登录shell的~/.bashrc),并执行bash让我们下面的命令能够执行
+	1 因为我们使用的是bash,所以必须要用#!/bin/bash来声明文件内使用bash语法,以#!开头的行称为shebang行,那当这个程序执行时,就能够加载bash的相关环境配置文件(一般是非登录shell的~/.bashrc),并执行bash让我们下面的命令能够执行
 	2 程序内容说明,#用来注释说明,可以一些基本数据,脚本用途日期作者等
 	3 主要环境变量的声明,PATH或LANG等,这样程序就可以直接执行一些外部命令,而不必写绝对路径
 	4 主要程序
@@ -2338,7 +2338,7 @@ shell脚本
 			例分别输出动物名
 			#!/bin/bash
 
-			for animal in dad cat elephot
+			for animal in dog cat elephot
 			do
 			        echo "this is $animal"
 			done
@@ -2864,7 +2864,7 @@ linux账号管理与ACL权限设置
 
 			setfacl #设置某个目录或文件的ACL
 				-m 设置后续的ACL参数给文件使用,不可与-x合用
-				-x 删除后续的ACL参数,不可与-x合用
+				-x 删除后续的ACL参数,不可与-m合用
 				-b 删除所有的ACL设置参数
 				-k 删除(默认的)ACL参数
 				-R 递归设置ACL,即包括子目录都会被设置起来
