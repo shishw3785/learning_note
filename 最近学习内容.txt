@@ -3402,3 +3402,170 @@ linux账号管理与ACL权限设置
 		容量限制或文件数量限制(block或inode)
 		软限制与硬限制
 			如sort 400M, hard 500M,低过400正常使用,超过500系统锁住磁盘使用权，用户在400~500时每登录系统时,系统会主动发出磁盘容量将耗尽的信息,且给予一个宽限时间(默认7天),7天内不进行磁盘管理,soft的值会替换hard值，磁盘使用权会被锁住无法新增文件
+
+
+	实例
+		目的与帐号：现在我想要让我的专题生五个为一组，这五个人的帐号分别是myquota1, myquota2, myquota3, myquota4, myquota5，这五个用户的密码都是password ，且这五个用户所属的初始群组都是myquotagrp 。其他的帐号属性则使用预设值。
+
+		帐号的磁碟容量限制值：我想让这五个用户都能够取得300MBytes 的磁碟使用量(hard)，档案数量则不予限制。此外，只要容量使用率超过250MBytes ，就予以警告(soft)。
+
+		群组的限额(option 1)：由于我的系统里面还有其他用户存在，因此我仅承认myquotagrp 这个群组最多仅能使用1GBytes 的容量。这也就是说，如果myquota1, myquota2, myquota3 都用了280MBytes 的容量了，那么其他两人最多只能使用 (1000MB - 280x3 = 160MB) 的磁碟容量啰！这就是使用者与群组同时设定时会产生的后果。
+
+		共享目录限额(option 2)：另一种设定方式，每个用户还是具有自己独立的容量限止，但是这五个人的专题共用目录在/home/myquota这里，该目录请设定为其他人没有任何权限的共享目录空间，仅有myquotagrp群组拥有全部的权限。且无论如何，该目录最多仅能够接受500MBytes的容量。请注意，群组(group)的限制与目录(directory/project)无法同时并存喔！所以底下的流程中，我们会先以群组来设计，然后再以目录限制来进一步说明！
+
+		宽限时间的限制：最后，我希望每个使用者在超过soft 限制值之后，都还能够有14 天的宽限时间。
+
+			#制作帐号环境时，由于有五个帐号，因此鸟哥使用script来建立环境！
+			[root@study ~]# vim addaccount.sh 
+			#!/bin/bash
+			# 使用script 来建立实验quota 所需的环境
+			groupadd myquotagrp
+			for username in myquota1 myquota2 myquota3 myquota4 myquota5
+			do
+				useradd -g myquotagrp $username
+				echo "password" | passwd --stdin $username
+			done
+			mkdir /home/myquota
+			chgrp myquotagrp /home/myquota
+			chmod 2770 /home/myquota
+
+			[root@study ~]# sh addaccount.sh
+
+
+			档案系统的支援与观察
+			[root@study ~]# vim /etc/fstab 
+			/dev/mapper/centos-home /home xfs defaults ,usrquota,grpquota    0 0
+			 #其他项目鸟哥并没有列出来！重点在于第四栏位！于default后面加上两个参数！
+
+			[root@study ~]# umount /home 
+			[root@study ~]# mount -a 
+			[root@study ~]# mount | grep home 
+			/dev/mapper/centos-home on /home type xfs (rw,relatime,seclabel ,attr2,inode64, usrquota,grpquota )
+			基本上，针对quota 限制的项目主要有三项，如下所示：
+
+			uquota/usrquota/quota：针对使用者帐号的设定
+			gquota/grpquota：针对群组的设定
+			pquota/prjquota：针对单一目录的设定，但是不可与grpquota 同时存在！
+
+
+			Quota 流程-2：观察Quota 报告资料
+			[root@study ~]# xfs_quota -x -c "指令" [挂载点] 
+			选项与参数：
+			-x ：专家模式，后续才能够加入-c 的指令参数喔！
+			-c ：后面加的就是指令，这个小节我们先来谈谈数据回报的指令
+			指令：
+			      print ：单纯的列出目前主机内的档案系统参数等资料
+			      df ：与原本的df 一样的功能，可以加上-b (block) -i (inode) -h (加上单位) 等
+			      report：列出目前的quota 项目，有-ugr (user/group/project) 及-bi 等资料
+			      state ：说明目前支援quota 的档案系统的资讯，有没有起动相关项目等
+
+			范例一：列出目前系统的各的档案系统，以及档案系统的quota挂载参数支援 
+			[root@study ~]# xfs_quota -x -c "print"
+			Filesystem Pathname
+			/ /dev/mapper/centos-root
+			/srv/myproject /dev/vda4
+			/boot /dev/vda2
+			/home /dev/mapper/centos-home ( uquota, gquota )   #所以这里就有显示支援啰
+
+			范例二：列出目前/home这个支援quota的载点档案系统使用情况 
+			[root@study ~]# xfs_quota -x -c "df -h" /home
+			Filesystem Size Used Avail Use% Pathname
+			/dev/mapper/centos-home
+			               5.0G 67.0M 4.9G 1% /home
+			# 如上所示，其实跟原本的df 差不多啦！只是会更正确就是了。
+
+			范例三：列出目前/home的所有用户的quota限制值 
+			[root@study ~]# xfs_quota -x -c "report -ubih" /home
+			User quota on /home (/dev/mapper/centos-home)
+			                        Blocks Inodes 
+			User ID       Used Soft Hard Warn/Grace      Used Soft Hard Warn/Grace
+			---------- --------------------------------- ------- --------------------------
+			root 4K 0 0 00 [------] 4 0 0 00 [------]
+			dmtsai 34.0M 0 0 00 [------] 432 0 0 00 [------]
+			.....(中间省略).....
+			myquota1 12K 0 0 00 [------] 7 0 0 00 [------]
+			myquota2 12K 0 0 00 [------] 7 0 0 00 [------]
+			myquota3 12K 0 0 00 [------] 7 0 0 00 [------]
+			myquota4 12K 0 0 00 [------] 7 0 0 00 [------]
+			myquota5 12K 0 0 00 [------] 7 0 0 00 [------]
+			# 所以列出了所有用户的目前的档案使用情况，并且列出设定值。注意，最上面的Block
+			# 代表这个是block 容量限制，而inode 则是档案数量限制喔。另外，soft/hard 若为0，代表没限制
+
+			范例四：列出目前支援的quota档案系统是否有起动了quota功能？
+			[root@study ~]# xfs_quota -x -c "state"
+			User quota state on /home (/dev/mapper/centos-home)
+			  Accounting: ON     #有启用计算功能 
+			  Enforcement: ON    #有实际quota管制的功能 
+			  Inode: #1568 (4 blocks, 4 extents)   #上面四行说明的是有启动user的限制能力
+			Group quota state on /home (/dev/mapper/centos-home)
+			  Accounting: ON
+			  Enforcement: ON
+			  Inode: #1569 (5 blocks, 5 extents)   #上面四行说明的是有启动group的限制能力
+			Project quota state on /home (/dev/mapper/centos-home)
+			  Accounting: OFF
+			  Enforcement: OFF
+			  Inode: #1569 (5 blocks, 5 extents)   #上面四行说明的是project并未支援 
+			Blocks grace time: [7 days 00:00:30]   #底下则是grace time的项目
+			Inodes grace time: [7 days 00:00:30]
+			Realtime Blocks grace time: [7 days 00:00:30]
+
+			Quota 流程-3：限制值设定方式
+			[root@study ~]# xfs_quota -x -c "limit [-ug] b[soft|hard]=N i[soft|hard]=N name" 
+			[root@study ~]# xfs_quota -x -c "timer [-ug] [-bir] Ndays" 
+			选项与参数：
+			limit ：实际限制的项目，可以针对user/group 来限制，限制的项目有
+			        bsoft/bhard : block 的soft/hard 限制值，可以加单位
+			        isoft/ihard : inode 的soft/hard 限制值
+			        name : 就是用户/群组的名称啊！
+			timer ：用来设定grace time 的项目喔，也是可以针对user/group 以及block/inode 设定
+
+			范例一：设定好用户们的block限制值(题目中没有要限制inode啦！) 
+			[root@study ~]# xfs_quota -x -c "limit -u bsoft=250M bhard=300M myquota1" /home 
+			[root@ study ~]# xfs_quota -x -c "limit -u bsoft=250M bhard=300M myquota2" /home 
+			[root@study ~]# xfs_quota -x -c "limit -u bsoft=250M bhard=300M myquota3" /home 
+			[ root@study ~]# xfs_quota -x -c "limit -u bsoft=250M bhard=300M myquota4" /home 
+			[root@study ~]# xfs_quota -x -c "limit -u bsoft=250M bhard=300M myquota5" / home 
+			[root@study ~]# xfs_quota -x -c "report -ubih" /home
+			User quota on /home (/dev/mapper/centos-home)
+			                        Blocks Inodes
+			User ID Used Soft Hard Warn/Grace Used Soft Hard Warn/Grace
+			---------- --------------------------------- ------- --------------------------
+			myquota1 12K    250M 300M   00 [------] 7 0 0 00 [------]
+
+			范例二：设定好myquotagrp的block限制值 
+			[root@study ~]# xfs_quota -x -c "limit -g bsoft=950M bhard=1G myquotagrp" /home 
+			[root@study ~]# xfs_quota -x -c "report -gbih" /home
+			Group quota on /home (/dev/mapper/centos-home)
+			                        Blocks Inodes
+			Group ID Used Soft Hard Warn/Grace Used Soft Hard Warn/Grace
+			---------- --------------------------------- ------- --------------------------
+			myquotagrp 60K    950M 1G   00 [------] 36 0 0 00 [------]
+
+			范例三：设定一下grace time变成14天吧！
+			[root@study ~]# xfs_quota -x -c "timer -ug -b 14days" /home 
+			[root@study ~]# xfs_quota -x -c "state" /home
+			User quota state on /home (/dev/mapper/centos-home)
+			.....(中间省略)..... 
+			Blocks grace time: [ 14 days 00:00:30]
+			Inodes grace time: [7 days 00:00:30]
+			Realtime Blocks grace time: [7 days 00:00:30]
+
+			范例四：以myquota1用户测试quota是否真的实际运作呢？
+			[root@study ~]# su - myquota1 
+			[myquota1@study ~]$ dd if=/dev/zero of=123.img bs=1M count=310
+			dd: error writing '123.img': Disk quota exceeded
+			300+0 records in
+			299+0 records out
+			314552320 bytes (315 MB) copied, 0.181088 s, 1.7 GB/s
+			[myquota1@study ~]$ ll -h 
+			-rw-r--r--. 1 myquota1 myquotagrp 300M Jul 24 21:38 123.img
+
+			[myquota1@study ~]$ exit 
+			[root@study ~]# xfs_quota -x -c "report -ubh" /home
+			User quota on /home (/dev/mapper/centos-home)
+			                        Blocks
+			User ID Used Soft Hard Warn/Grace
+			---------- ---------------------------------
+			myquota1 300M 250M 300M 00 [13 days]
+			myquota2 12K 250M 300M 00 [------]
+			# 因为myquota1 的磁碟用量已经破表，所以当然就会出现那个可怕的grace time 啰！
