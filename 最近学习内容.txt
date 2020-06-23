@@ -3811,3 +3811,54 @@ linux账号管理与ACL权限设置
 		Filesystem Type Size Used Avail Use% Mounted on
 		/dev/md0 xfs 3.0G 111M 2.9G 4% /srv/raid
 		# 你得确定可以顺利挂载，并且没有发生任何错误！
+
+		关闭raid
+		# 1.先卸载且删除设定档内与这个/dev/md0有关的设定： 
+		[root@study ~]# umount /srv/raid 
+		[root@study ~]# vim /etc/fstab 
+		UUID=494cb3e1-5659- 4efc-873d-d0758baec523 /srv/raid xfs defaults 0 0 
+		#将这一行删除掉！或者是注解掉也可以！
+
+		# 2.先覆盖掉RAID的metadata以及XFS的superblock，才关闭/dev/md0的方法 
+		[root@study ~]# dd if=/dev/zero of=/dev/md0 bs=1M count=50 
+		[root @study ~]# mdadm --stop /dev/md0 
+		mdadm: stopped /dev/md0   <==不啰唆！这样就关闭了！
+		[root@study ~]# dd if=/dev/zero of=/dev/vda5 bs=1M count=10 
+		[root@study ~]# dd if=/dev/zero of=/dev/vda6 bs=1M count =10 
+		[root@study ~]# dd if=/dev/zero of=/dev/vda7 bs=1M count=10 
+		[root@study ~]# dd if=/dev/zero of=/dev/vda8 bs= 1M count=10 
+		[root@study ~]# dd if=/dev/zero of=/dev/vda9 bs=1M count=10
+
+		[root@study ~]# cat /proc/mdstat
+		Personalities : [raid6] [raid5] [raid4]
+		unused devices: <none>   <==看吧！确实不存在任何阵列装置！
+
+		[root@study ~]# vim /etc/mdadm.conf 
+		#ARRAY /dev/md0 UUID=2256da5f:4870775e:cf2fe320:4dfabbc6 
+		#一样啦！删除他或是注解他！
+
+	LVM(逻缉卷管理器)
+		弹性调整系统的容量,并不是性能与数据安全的考量
+		LVM可以整合多个物理分区,让这些分区看起来像一个磁盘一样(VG),然后将这块大磁盘经过划分为可使用的分区(lv)最后挂载使用,未来还可以在LVM中新增或删除其他的物理分区
+
+		物理卷(PV)
+			实际的分区或磁盘需要调整系统标识符成为LVM标识符(8e),然后通过pvcreate命令将它转成LVM最底层的镜像物理卷(pv)
+
+		卷组(VG)
+			将多个PV整合成VG(看起来像大磁盘)
+
+		物理扩展块(PE)
+			默认4M，LVM最小存储单位,数据都是借由写出PE来完成(类似文件统成的block)
+
+		逻辑卷(LV)
+			最终VG还会切成LV，LV就是最后可以被格式化类似分区的东西,设备各通常为/dev/vgname/vname
+
+		LVM是通过交换PE来进行数据转换(修改容量),将原本LV内的PE转移到其它设备中降低容量,或将其它设备的PE加入此LV来增加容量
+
+		数据写入LV时有两种方式
+			线性模式
+				如/dev/vda1,/dev/vda2两个分区加入到VG中,并且整个VG只有一个LV时,会先用用/dev/vda1的磁盘再用vda2的
+			交错模式
+				就是数据分别写入vd1与vd2(类似raid 0 ),性能较好
+
+			LVM的主要功能就是弹性调整容量,所以默认是线性模式,不建议使用交错模式
