@@ -3569,3 +3569,245 @@ linux账号管理与ACL权限设置
 			myquota1 300M 250M 300M 00 [13 days]
 			myquota2 12K 250M 300M 00 [------]
 			# 因为myquota1 的磁碟用量已经破表，所以当然就会出现那个可怕的grace time 啰！
+
+			针对目录的限制参考鸟哥
+
+		不修改即有系统的磁盘配额
+		如要对/var/spool/mail邮件进行限额
+			将/var/spool/mail 目录完整地移动到/home下
+			利用ln -s /home/mail /var/spool/mail 建立软链
+			对/home进行磁盘配额
+
+
+	磁盘阵列(RAID)
+		独立冗余磁盘阵列,RAID通过技术(软件或硬件)将多个较小的磁盘整合成为一个较大的磁盘设备,磁盘不单可以存储而且还具有数据保护的功能
+		常见level
+			RAID 0 (等量模式,stripe)，性能最佳
+				这模式会将磁盘先切出先切出等量的数据块(chunk,4K~1M),然后当一个文件写入raid时,该文件会根据chunk的大小切好,再依序放到各磁盘中，因此数据写入RAID时,数据会等量地放置在各个磁盘上面(如有100M数写入两块磁盘组成的RAID时,各磁盘被分配50M的数据).磁盘使用相同型号与容量组成时效果较佳.越多块磁盘组成的RAI
+				D 0性能越好,因为每块负责的数据量就更低,但RAID 0只要有任何一块磁盘损坏,在RAID上的数据都会遗失
+
+			RAID 1(镜像模式, mirror),完整备份
+				也是最好相同型号相同的磁盘,如果是不同容量磁盘组成,那总容量将以最小的那块为主.这模式是让同一份数据完整地保存在两块磁盘上，如100M文件写入两块磁盘组成的RAID 1，那么(通过I/0总线(南桥),因此写的性能差)这两块磁盘将会同步写入100M到它们上面,因此整体的RAID的容量几乎少了50%.如果是硬件raid 1，磁盘阵列卡就不使用I/O总线(性能较好).优点,任何一块磁盘损坏时数据还是完整地保存下来,缺点磁盘的容量有一半在备份
+
+			RAID 10 , RAID 01
+				所谓的RAID10就是先让两块磁盘组成RAID 1，并且这样的设置共有两组,然后将两组RAID1组成一组RAID0,推荐10,如有20块磁盘组成的,每两块组成RAID1,这样就总共有10组可以自已恢复系统,然后10组再组成一个raid0，速度立刻提升了10倍
+
+			RAID 5 性能与数据备份的均衡考虑
+				需要三块以上的磁盘,数据循环写入时会有部分的奇偶校验值(parity)被纪录上来,并且都记录在不同的磁盘,因此任何一个磁盘损坏时都能够借由其它的磁盘的检查码来重建原本磁盘内的数据，由于有奇偶检验值,因此raid5的总容量会是整体磁盘数量减一块。如3块磁盘只会剩下2块的容量,而且当损坏的磁盘数量大于等于两块时,raid5数据就会被损坏,因此仅能支持一块磁盘的损坏
+			RAID6
+				与RAID5相似,不过RAID6使用两块磁盘的容量存储奇偶校验值,因此磁盘容量就会少两块,但是允许出错的磁盘数量就可以达到两块了
+
+
+			热备份磁盘(spare disk)
+				热备份磁盘是一块或多块没有包含在原本磁盘阵列中的磁盘,平时并不会使用,当磁盘阵列有任何磁盘损坏时,这块热备份磁盘就会被主动拉进磁盘中,并将坏掉的那块硬盘移动磁盘阵列,然后立即重建数据系统，数据就会安全继续保存着
+
+			磁盘阵列的优点
+				数据的安全与可靠
+				读写性能,如RAID0可加强读写性能,让系统的I/O部分得到改善
+				容量,可以让多块磁盘组合起来提升容量
+
+		硬件RAID，软件RAID
+			硬件RAID就是通过磁盘阵列卡(有芯片)来完成RAID的任务
+			软件RAID是通过软件技术来模拟RAID任务
+
+		软件RAID的设置
+		[root@study ~]# mdadm --detail /dev/md0 
+		[root@study ~]# mdadm --create /dev/md[0-9] --auto=yes --level=[015] --chunk =NK \ 
+		> --raid-devices=N --spare-devices=N /dev/sdx /dev/hdx... 
+		选项与参数：
+		--create ：为建立RAID 的选项；
+		--auto=yes ：决定建立后面接的软体磁碟阵列装置，亦即/dev/md0, /dev/md1...
+		--chunk=Nk ：决定这个装置的chunk 大小，也可以当成stripe 大小，一般是64K 或512K。
+		--raid-devices=N ：使用几个磁碟(partition) 作为磁碟阵列的装置
+		--spare-devices=N ：使用几个磁碟作为备用(spare) 装置
+		--level=[015] ：设定这组磁碟阵列的等级。支援很多，不过建议只要用0, 1, 5 即可
+		--detail ：后面所接的那个磁碟阵列装置的详细资讯
+
+		例
+		利用4 个partition 组成RAID 5；
+		每个partition 约为1GB 大小，需确定每个partition 一样大较佳；
+		利用1 个partition 设定为spare disk
+		chunk 设定为256K 这么大即可！
+		这个spare disk 的大小与其他RAID 所需partition 一样大！
+		将此RAID 5 装置挂载到/srv/raid 目录下
+
+		[root@study ~]# lsblk
+		NAME MAJ:MIN RM SIZE RO TYPE MOUNTPOINT
+		vda 252:0 0 40G 0 disk
+		|-vda1 252:1 0 2M 0 part
+		|-vda2 252:2 0 1G 0 part /boot
+		|-vda3 252:3 0 30G 0 part
+		| |-centos-root 253:0 0 10G 0 lvm /
+		| |-centos-swap 253:1 0 1G 0 lvm [SWAP]
+		| `-centos-home 253:2 0 5G 0 lvm /home
+		|-vda4 252:4 0 1G 0 part /srv/myproject
+		|-vda5 252:5 0 1G 0 part
+		|-vda6 252:6 0 1G 0 part
+		|-vda7 252:7 0 1G 0 part
+		|-vda8 252:8 0 1G 0 part
+		`-vda9 252:9 0 1G 0 part    #5块分区,一般是磁盘
+
+		以mdadm 建置RAID
+		接下来就简单啦！透过mdadm 来建立磁碟阵列先！
+
+		[root@study ~]# mdadm --create /dev/md0 --auto=yes --level=5 --chunk=256K \ 
+		> --raid-devices=4 --spare-devices=1 /dev/vda {5,6,7,8,9}
+		mdadm: /dev/vda5 appears to contain an ext2fs file system
+		       size=1048576K mtime=Thu Jun 25 00:35:01 2015    #某些时刻会出现这个东西！没关系的！
+		Continue creating array? y
+		mdadm: Defaulting to version 1.2 metadata
+		mdadm: array /dev/md0 started.
+		# 详细的参数说明请回去前面看看啰！这里我透过{} 将重复的项目简化！
+		# 此外，因为鸟哥这个系统经常在建置测试的环境，因此系统可能会抓到之前的filesystem 
+		# 所以就会出现如上前两行的讯息！那没关系的！直接按下y 即可删除旧系统
+
+		[root@study ~]# mdadm --detail /dev/md0 
+		/dev/md0:                                            # RAID的装置档名
+		        Version : 1.2
+		  Creation Time : Mon Jul 27 15:17:20 2015           #建置RAID的时间 
+		     Raid Level : raid5                              #这就是RAID5等级！
+		     Array Size : 3142656 (3.00 GiB 3.22 GB)         #整组RAID的可用容量 
+		  Used Dev Size : 1047552 (1023.17 MiB 1072.69 MB)   #每颗磁碟(装置)的容量 
+		   Raid Devices : 4                                  #组成RAID的磁碟数量 
+		  Total Devices : 5                                  #包括spare的总磁碟数
+		    Persistence : Superblock is persistent
+
+		    Update Time : Mon Jul 27 15:17:31 2015
+		          State : clean                              #目前这个磁碟阵列的使用状态 
+		 Active Devices : 4                                  #启动(active)的装置数量 
+		Working Devices : 5                                  #目前使用于此阵列的装置数 
+		 Failed Devices : 0                                  #损坏的装置数 
+		  Spare Devices : 1                                  #预备磁碟的数量
+
+		         Layout : left-symmetric
+		     Chunk Size : 256K                               #就是chunk的小区块容量
+
+		           Name : study.centos.vbird:0 (local to host study.centos.vbird)
+		           UUID : 2256da5f:4870775e:cf2fe320:4dfabbc6
+		         Events : 18
+
+		    Number Major Minor    RaidDevice State
+		       0 252 5 0 active sync /dev/vda5
+		       1 252 6 1 active sync /dev/vda6
+		       2 252 7 2 active sync /dev/vda7
+		       5 252 8 3 active sync /dev/vda8
+
+		       4 252 9 - spare /dev/vda9
+		# 最后五行就是这五个装置目前的情况，包括四个active sync 一个spare ！
+		# 至于RaidDevice 指的则是此RAID 内的磁碟顺序
+
+		格式化与挂载使用RAID
+		接下来就是开始使用格式化工具啦！这部分就需要注意喔！因为涉及到xfs 档案系统的优化！还记得第七章的内容吧？我们这里的参数为：
+
+		srtipe (chunk) 容量为256K，所以su=256k
+		共有4 颗组成RAID5 ，因此容量少一颗，所以sw=3 喔！
+		由上面两项计算出资料宽度为： 256K*3=768k
+		所以整体来说，要优化这个XFS 档案系统就变成这样：
+
+		[root@study ~]# mkfs.xfs -f -d su=256k,sw=3 -r extsize=768k /dev/md0 
+		#有趣吧！是/dev/md0做为装置被格式化呢！
+
+		[root@study ~]# mkdir /srv/raid 
+		[root@study ~]# mount /dev/md0 /srv/raid 
+		[root@study ~]# df -Th /srv/raid
+		Filesystem Type Size Used Avail Use% Mounted on
+		/dev/md0 xfs 3.0G 33M 3.0G 2% /srv/raid
+		# 看吧！多了一个/dev/md0 的装置，而且真的可以让你使用呢！还不赖！
+
+
+		模拟RAID 错误的救援模式
+		[root@study ~]# mdadm --manage /dev/md[0-9] [--add装置] [--remove装置] [--fail装置] 
+		选项与参数：
+		--add ：会将后面的装置加入到这个md 中！
+		--remove ：会将后面的装置由这个md 中移除
+		--fail ：会将后面的装置设定成为出错的状态
+		设定磁碟为错误(fault)
+		首先，我们来处理一下，该如何让一个磁碟变成错误，然后让spare disk 自动的开始重建系统呢？
+
+		# 0.先复制一些东西到/srv/raid去，假设这个RAID已经在使用了 
+		[root@study ~]# cp -a /etc /var/log /srv/raid 
+		[root@study ~]# df - Th /srv/raid ; du -sm /srv/raid/*
+		Filesystem Type Size Used Avail Use% Mounted on
+		/dev/md0 xfs 3.0G 144M 2.9G 5% /srv/raid
+		28 /srv/raid/etc   <==看吧！确实有资料在里面喔！
+		51 /srv/raid/log
+
+		# 1.假设/dev/vda7这个装置出错了！实际模拟的方式： 
+		[root@study ~]# mdadm --manage /dev/md0 --fail /dev/vda7 
+		mdadm: set /dev/vda7 faulty in /dev/md0       #设定成为错误的装置啰！
+		/dev/md0:
+		.....(中间省略).....
+		    Update Time : Mon Jul 27 15:32:50 2015
+		          State : clean, degraded, recovering
+		 Active Devices : 3
+		Working Devices : 4
+		 Failed Devices : 1       <==出错的磁碟有一个！
+		  Spare Devices : 1
+		.....(中间省略).....
+
+		    Number Major Minor RaidDevice State
+		       0 252 5 0 active sync /dev/vda5
+		       1 252 6 1 active sync /dev/vda6
+		       4 252 9 2       spare rebuilding /dev/vda9
+		       5 252 8 3 active sync /dev/vda8
+
+		       2 252 7 -       faulty /dev/vda7 
+		#看到没！这的动作要快做才会看到！/dev/vda9启动了而/dev/vda7死掉了
+		上面的画面你得要快速的连续输入那些mdadm 的指令才看的到！因为你的RAID 5 正在重建系统！若你等待一段时间再输入后面的观察指令，则会看到如下的画面了：
+
+		# 2.已经藉由spare disk重建完毕的RAID 5情况 
+		[root@study ~]# mdadm --detail /dev/md0 
+		....(前面省略)....
+		    Number Major Minor RaidDevice State
+		       0 252 5 0 active sync /dev/vda5
+		       1 252 6 1 active sync /dev/vda6
+		       4 252 9 2 active sync /dev/vda9
+		       5 252 8 3 active sync /dev/vda8
+
+		       2 252 7 - faulty /dev/vda7
+		看吧！又恢复正常了！真好！我们的/srv/raid 档案系统是完整的！并不需要卸载！很棒吧！
+
+		将出错的磁碟移除并加入新磁碟
+		因为我们的系统那个/dev/vda7 实际上没有坏掉啊！只是用来模拟而已啊！因此，如果有新的磁碟要替换，其实替换的名称会一样啊！也就是我们需要：
+
+		先从/dev/md0 阵列中移除/dev/vda7 这颗『磁碟』
+		整个Linux 系统关机，拔出/dev/vda7 这颗『磁碟』，并安装上新的/dev/vda7 『磁碟』，之后开机
+		将新的/dev/vda7 放入/dev/md0 阵列当中！
+		# 3.拔除『旧的』/dev/vda7磁碟 
+		[root@study ~]# mdadm --manage /dev/md0 --remove /dev/vda7 
+		#假设接下来你就进行了上面谈到的第2 , 3个步骤，然后重新开机成功了！
+
+		# 4.安装『新的』/dev/vda7磁碟 
+		[root@study ~]# mdadm --manage /dev/md0 --add /dev/vda7 
+		[root@study ~]# mdadm --detail /dev/ md0 
+		....(前面省略)....
+		    Number Major Minor RaidDevice State
+		       0 252 5 0 active sync /dev/vda5
+		       1 252 6 1 active sync /dev/vda6
+		       4 252 9 2 active sync /dev/vda9
+		       5 252 8 3 active sync /dev/vda8
+
+		       6 252 7 - spare /dev/vda7
+
+		开机自动启动RAID 并自动挂载
+		[root@study ~]# mdadm --detail /dev/md0 | grep -i uuid
+           UUID : 2256da5f:4870775e:cf2fe320:4dfabbc6
+		# 后面那一串资料，就是这个装置向系统注册的UUID 识别码！
+
+		#开始设定mdadm.conf 
+		[root@study ~]# vim /etc/mdadm.conf 
+		ARRAY /dev/md0 UUID=2256da5f:4870775e:cf2fe320:4dfabbc6 
+		# RAID装置识别码内容
+
+		#开始设定开机自动挂载并测试 
+		[root@study ~]# blkid /dev/md0
+		/dev/md0: UUID="494cb3e1-5659-4efc-873d-d0758baec523" TYPE="xfs"
+
+		[root@study ~]# vim /etc/fstab 
+		UUID=494cb3e1-5659-4efc-873d-d0758baec523 /srv/raid xfs defaults 0 0
+
+		[root@study ~]# umount /dev/md0; mount -a 
+		[root@study ~]# df -Th /srv/raid
+		Filesystem Type Size Used Avail Use% Mounted on
+		/dev/md0 xfs 3.0G 111M 2.9G 4% /srv/raid
+		# 你得确定可以顺利挂载，并且没有发生任何错误！
