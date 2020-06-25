@@ -4304,3 +4304,115 @@ linux账号管理与ACL权限设置
 			  Volume group "vbirdvg" successfully removed
 
 			[root@study ~]# pvremove /dev/vda{5,6,7,8}
+
+
+
+插入学习
+
+
+计划任务(crontab)
+	centos linux 系统上常见的例行性工作
+		执行日志文件的轮循
+			日志文件切割,不然单一文件太大读写性能差,也混乱
+		日志文件分析
+			通过logwatch来主动分析各种信息
+		建立locate的数据库
+			文件名数据库的更新
+		manpage查刘数据库的建立
+		RPM软件日志文件的建立
+		删除缓存
+		与网络服务有关的分析操作
+			如apache的日志
+
+	仅执行一次的计划任务
+		15.2.1 atd 的启动与at 运作的方式
+			root@study ~]# systemctl restart atd   #重新启动atd这个服务 
+			[root@study ~]# systemctl enable atd   #让这个服务开机就自动启动 
+			[root@study ~]# systemctl status atd   #查阅一下atd目前的状态
+			atd.service - Job spooling tools
+			   Loaded: loaded (/usr/lib/systemd/system/atd.service; enabled )        #是否开机启动 
+			   Active: active (running) since Thu 2015-07-30 19:21:21 CST; 23s ago #是否正在运作中
+			 Main PID: 26503 (atd)
+
+			我们可以利用/etc/at.allow 与/etc/at.deny 这两个档案来进行at 的使用限制呢！加上这两个档案后， at 的工作情况其实是这样的：
+			先找寻/etc/at.allow这个档案，写在这个档案中的使用者才能使用at ，没有在这个档案中的使用者则不能使用at (即使没有写在at.deny当中)；
+			如果/etc/at.allow不存在，就寻找/etc/at.deny这个档案，若写在这个at.deny的使用者则不能使用at ，而没有在这个at.deny档案中的使用者，就可以使用at咯；
+			如果两个档案都不存在，那么只有root 可以使用at 这个指令。
+
+			[root@study ~]# at [-mldv] TIME 
+			[root@study ~]# at -c工作号码
+			选项与参数：
+			-m ：当at 的工作完成后，即使没有输出讯息，亦以email 通知使用者该工作已完成。
+			-l ：at -l 相当于atq，列出目前系统上面的所有该使用者的at 排程；
+			-d ：at -d 相当于atrm ，可以取消一个在at 排程中的工作；
+			-v ：可以使用较明显的时间格式列出at 排程中的工作列表；
+			-c ：可以列出后面接的该项工作的实际指令内容。
+
+			TIME：时间格式，这里可以定义出『什么时候要进行at 这项工作』的时间，格式有：
+			  HH:MM ex> 04:00
+				在今日的HH:MM 时刻进行，若该时刻已超过，则明天的HH:MM 进行此工作。
+			  HH:MM YYYY-MM-DD ex> 04:00 2015-07-30
+				强制规定在某年某月的某一天的特殊时刻进行该工作！
+			  HH:MM[am|pm] [Month] [Date] ex> 04pm July 30
+				也是一样，强制在某年某月某日的某时刻进行！
+			  HH:MM[am|pm] + number [minutes|hours|days|weeks]
+				ex> now + 5 minutes ex> 04pm + 3 days
+				就是说，在某个时间点『再加几个时间后』才进行。
+
+			范例一：再过五分钟后，将/root/.bashrc寄给root自己 
+			[root@study ~]# at now + 5 minutes   <==记得单位要加s喔！
+			at> /bin/mail -s "testing at job" root < /root/.bashrc 
+			at> <EOT>    <==这里输入[ctrl] + d就会出现<EOF>的字样！代表结束！
+			job 2 at Thu Jul 30 19:35:00 2015
+			# 上面这行资讯在说明，第2 个at 工作将在2015/07/30 的19:35 进行！
+			# 而执行at 会进入所谓的at shell 环境，让你下达多重指令等待运作！
+
+			范例二：将上述的第2项工作内容列出来查阅 
+			[root@study ~]# at -c 2 
+			#!/bin/sh                <==就是透过bash shell的啦！
+			# atrun uid=0 gid=0
+			# mail root 0
+			umask 22
+			....(中间省略许多的环境变数项目)....
+			cd /etc/cron\.d || {
+			         echo 'Execution directory inaccessible' >&2
+			         exit 1
+			}
+			${SHELL:-/bin/sh} << 'marcinDELIMITER410efc26'
+			/bin/mail -s "testing at job" root < /root/.bashrc     #这一行最重要！
+			marcinDELIMITER410efc26 
+			#你可以看到指令执行的目录(/root)，还有多个环境变数与实际的指令内容啦！
+
+			范例三：由于机房预计于2015/08/05停电，我想要在2015/08/04 23:00关机？
+			[root@study ~]# at 23:00 2015-08-04 
+			at> /bin/sync 
+			at> /bin/sync 
+			at> /sbin/shutdown -h now
+			at> <EOT>
+			job 3 at Tue Aug 4 23:00:00 2015
+			# 您瞧瞧！at 还可以在一个工作内输入多个指令呢！不错吧！
+
+			注意 用绝对路径来下达指令，会是比较一劳永逸的方法(命令与文件)
+
+			at的执行与终端机环境无关，而所有standard output/standard error output都会传送到执行者的mailbox去,要输出到终端可用 echo "hello">/dev/tty1
+
+			[root@study ~]# atq 
+			[root@study ~]# atrm (jobnumber)
+
+			范例一：查询目前主机上面有多少的at工作排程？
+			[root@study ~]# atq
+			3 Tue Aug 4 23:00:00 2015 a root
+			# 上面说的是：『在2015/08/04 的23:00 有一项工作，该项工作指令下达者为 
+			# root』而且，该项工作的工作号码(jobnumber) 为3 号喔！
+
+			范例二：将上述的第3个工作移除！
+			[root@study ~]# atrm 3 
+			[root@study ~]# atq 
+			#没有任何资讯，表示该工作被移除了
+
+			batch：系统有空时才进行背景任务,cpu任务负载小于0.8，可用uptime查看
+
+				[root@study ~]# batch 
+				at> /usr/bin/updatedb
+				at> <EOT>
+				job 4 at Thu Jul 30 19:57:00 2015
