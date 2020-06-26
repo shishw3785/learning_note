@@ -4307,7 +4307,6 @@ linux账号管理与ACL权限设置
 
 
 
-插入学习
 
 
 计划任务(crontab)
@@ -4416,3 +4415,87 @@ linux账号管理与ACL权限设置
 				at> /usr/bin/updatedb
 				at> <EOT>
 				job 4 at Thu Jul 30 19:57:00 2015
+
+
+	循环执行的计划任务
+		特环执行的许划任务同crond这个系统服务来控制
+
+		也有相应的/etc/cron.allow与deny
+
+		当用户使用crontab命令来建立计划任务之务,该项任务就会被记录到/var/spool/cron中,且以账号来作为判断
+
+		cron执行的每一项任务都会被记录到/var/log/cron日志中,木马会利用crontab来收集志,可以查看些日志看机子是否有木马
+
+		[root@study ~]# crontab [-u username] [-l|-e|-r] 
+		选项与参数：
+		-u ：只有root 才能进行这个任务，亦即帮其他使用者建立/移除crontab 工作排程；
+		-e ：编辑crontab 的工作内容
+		-l ：查阅crontab 的工作内容
+		-r ：移除所有的crontab 的工作内容，若仅要移除一项，请用-e 去编辑。
+
+		范例一：用dmtsai的身份在每天的12:00发信给自己 
+		[dmtsai@study ~]$ crontab -e 
+		#此时会进入vi的编辑画面让您编辑工作！注意到，每项工作都是一行。
+		0 12 * * * mail -s "at 12:00" dmtsai < /home/dmtsai/.bashrc 
+		#分时日月周|<==============指令串=== =====================>|
+
+		六个栏位的意义为：
+			代表意义	分钟	小时	日期	月份	周	指令
+			数字范围	0-59	0-23	1-31	1-12	0-7	呀就指令啊
+			比较有趣的是那个『周』喔！周的数字为0 或7 时，都代表『星期天』的意思！另外，还有一些辅助的字符，大概有底下这些：
+
+			特殊字符	代表意义
+			*(星号)	代表任何时刻都接受的意思！举例来说，范例一内那个日、月、周都是* ， 就代表着『不论何月、何日的礼拜几的12:00 都执行后续指令』的意思！
+			,(逗号)	代表分隔时段的意思。举例来说，如果要下达的工作是3:00 与6:00 时，就会是：
+			0 3,6 * * * command
+			时间参数还是有五栏，不过第二栏是3,6 ，代表3 与6 都适用！
+			-(减号)	代表一段时间范围内，举例来说， 8 点到12 点之间的每小时的20 分都进行一项工作：
+			20 8-12 * * * command
+			仔细看到第二栏变成8-12 喔！代表8,9,10,11,12 都适用的意思！
+			/n(斜线)	那个n 代表数字，亦即是『每隔n 单位间隔』的意思，例如每五分钟进行一次，则：
+			*/5 * * * * command
+			很简单吧！用* 与/5 来搭配，也可以写成0-59/5 ，相同意思！
+		
+		/etc/crontab, /etc/cron.d/*
+			系统的例行性任务，只要编辑 /etc/crontab这个档案就可以啦
+			cron这个服务的最低侦测限制是『分钟』，所以『 cron会每分钟去读取一次/etc/crontab与/var/spool/cron里面的资料内容
+
+			/etc/crontab编辑保存退出后最好重启cron服务,systemctl restart crond
+
+			[root@study ~]# cat /etc/crontab 
+			SHELL=/bin/bash                      <==使用哪种shell介面 
+			PATH=/sbin:/bin:/usr/sbin:/usr/bin   <==执行档搜寻路径 
+			MAILTO=root                          <==若有额外STDOUT，以email将资料送给谁
+
+			# Example of job definition:
+			# .---------------- minute (0 - 59)
+			# | .------------- hour (0 - 23)
+			# | | .---------- day of month (1 - 31)
+			# | | | .------- month (1 - 12) OR jan,feb,mar,apr ...
+			# | | | | .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+			# | | | | |
+			# * * * * * user-name command to be executed  #注意比crontab命令多了一个用户
+
+			crond 预设有三个地方会有执行脚本设定档，他们分别是：
+
+				/etc/crontab
+				/etc/cron.d/* #其它包括每日或每周每月相关的任务
+				/var/spool/cron/*   #用户的任务
+
+			如[root@study ~]# cat /etc/cron.d/0hourly
+				# Run the hourly jobs
+				SHELL=/bin/bash
+				PATH=/sbin:/bin:/usr/sbin:/usr/bin
+				MAILTO=root
+				01 * * * * root run-parts /etc/cron.hourly
+
+				可以直接将指令放置到(或连结到)/etc/cron.hourly/ 目录下，则该指令就会被crond 在每小时的1 分开始后的5 分钟内，随机取一个时间点来执行啰！你无须手动去指定分、时、日、月、周就是了,注意放的要是执行文件,其它的类似
+
+			注意事项
+				资源分配不均的问题
+					如同一分钟执行四个命令,可以错开执行的分钟时间
+				取消不要的输出项目
+					利用重定向到 /dev/null
+				安全的检验
+					查看/var/log/cron有无木马例行任务
+				周与日月不可同时并存
