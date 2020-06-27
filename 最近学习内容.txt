@@ -4499,3 +4499,13 @@ linux账号管理与ACL权限设置
 				安全的检验
 					查看/var/log/cron有无木马例行任务
 				周与日月不可同时并存
+
+	可唤醒停机期间的工作任务
+		anacron 会每个小时被主动执行一次,用来执行Linux关机后并未正常执行cron的任务
+
+		crond 会主动去读取/etc/crontab, /var/spool/cron/*, /etc/cron.d/* 等设定档，并依据『分、时、日、月、周』的时间设定去各项工作排程；
+		根据/etc/cron.d/0hourly 的设定，主动去/etc/cron.hourly/ 目录下，执行所有在该目录下的执行档；
+		因为/etc/cron.hourly/0anacron 这个指令档的缘故，主动的每小时执行anacron ，并呼叫/etc/anacrontab 的设定档；
+		根据/etc/anacrontab 的设定，依据每天、每周、每月去分析/etc/cron.daily/, /etc/cron.weekly/, /etc/cron.monthly/ 内的执行档，以进行固定周期需要执行的指令。
+
+		如果你每个周日的需要执行的动作是放置于/etc/crontab 的话，那么该动作只要过期了就过期了，并不会被调回来重新执行。但如果是放置在/etc/cron.weekly/ 目录下，那么该工作就会定期，几乎一定会在一周内执行一次～如果你关机超过一周，那么一开机后的数个小时内，该工作就会主动的被执行喔
