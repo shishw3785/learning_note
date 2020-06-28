@@ -4614,4 +4614,56 @@ linux账号管理与ACL权限设置
 			[3]    Running                  find / -perm /7000 > /tmp/text.txt &
 			那个状态列～以经由Stop​​ping 变成了Running 啰！看到差异点，嘿嘿！指令列最后方多了一个& 的符号
 
-			
+		管理背景当中的工作： kill
+
+			[root@study ~]# kill -signal %jobnumber 
+			[root@study ~]# kill -l 
+			选项与参数：
+			-l ：这个是L 的小写，列出目前kill 能够使用的讯号(signal) 有哪些？
+			signal ：代表给予后面接的那个工作什么样的指示啰！用man 7 signal 可知：
+			  -1 ：重新读取一次参数的设定档(类似reload)；
+			  -2 ：代表与由键盘输入[ctrl]-c 同样的动作；
+			  -9 ：立刻强制删除一个工作；
+			  -15：以正常的程序方式终止一项工作。与-9 是不一样的。  #kill的默认值
+
+			范例一：找出目前的bash环境下的背景工作，并将该工作『强制删除』。
+			[root@study ~]# jobs
+			[1]+ Stopped vim ~/.bashrc
+			[2] Stopped find / -print
+			[root@study ~]# kill -9 %2; jobs
+			[1]+ Stopped vim ~/.bashrc
+			[2]    Killed                   find / -print
+			 #再过几秒你再下达jobs一次，就会发现2号工作不见了！因为被移除了！
+
+			范例二：找出目前的bash环境下的背景工作，并将该工作『正常终止』掉。
+			[root@study ~]# jobs
+			[1]+ Stopped vim ~/.bashrc
+			[root@study ~]# kill -SIGTERM %1 
+			# -SIGTERM与-15是一样的！您可以使用kill -l来查阅！
+			# 不过在这个案例中， vim 的工作无法被结束喔！因为他无法透过kill 正常终止的意思！
+
+			kill 后面接的数字预设会是PID ，如果想要管理bash 的工作控制，就得要加上%数字
+
+
+		离线管理问题
+			上面的是BASH的后台任务,还是与终端相关,终端关掉后后台执行的任务还是会中断,并不是真正的系统后台
+			想让终端离线后还能继续执行任务,可以用at与nohup
+
+			[root@study ~]# nohup [指令与参数]    <==在终端机前景中工作 
+			[root@study ~]# nohup [指令与参数] &  <==在终端机背景中工作
+
+			# 1.先编辑一支会『睡着500秒』的程式： 
+			[root@study ~]# vim sleep500.sh
+			#!/bin/bash
+			/bin/sleep 500s
+			/bin/echo "I have slept 500 seconds."
+
+			# 2.丢到背景中去执行，并且立刻登出系统： 
+			[root@study ~]# chmod a+x sleep500.sh 
+			[root@study ~]# nohup ./sleep500.sh &
+			[2] 14812
+			[root@study ~]# nohup: ignoring input and appending output to `nohup.out' <==会告知这个讯息！
+			[root@study ~]# exit
+
+			再次终端连入会发现脚本还是在执行
+			注意,nohup不支持BASH的内建命令，必须是外部指令
