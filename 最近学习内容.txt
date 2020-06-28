@@ -4509,3 +4509,109 @@ linux账号管理与ACL权限设置
 		根据/etc/anacrontab 的设定，依据每天、每周、每月去分析/etc/cron.daily/, /etc/cron.weekly/, /etc/cron.monthly/ 内的执行档，以进行固定周期需要执行的指令。
 
 		如果你每个周日的需要执行的动作是放置于/etc/crontab 的话，那么该动作只要过期了就过期了，并不会被调回来重新执行。但如果是放置在/etc/cron.weekly/ 目录下，那么该工作就会定期，几乎一定会在一周内执行一次～如果你关机超过一周，那么一开机后的数个小时内，该工作就会主动的被执行喔
+
+
+进程管理与SElinux初控
+	触发任何一个事件时,系统都会将它定义为一个进程,并给予一个ID，PID，同时根据触发这个进程的用户与相关属性,给予这个PID一组有效的权限
+
+	程序一般是放在磁盘中,用户通过执行触发后,加载到内存成为一个个体,进程,为了让操作系统管理,进程会有执行者的权限/属性等参数,以及进程需要的脚本与数据,最后再给一个PID，操作系统根据PID来判断进程是否具有执行权限
+		如BASH，用户登录后执行BASH，有PID，PID根据登录者的UID/GID遭遇来,每个用户登录的BASH获取的PID与UID/GID不一样,而当这个进程执行其他作业时,如touch,那由这个进程程衍生出来的其它进程一般状态下也会沿用这个进程的相关权限
+
+		[root@localhost ~]# bash  #触发BASH
+		[root@localhost ~]# ps -l
+		F S   UID   PID  PPID  C PRI  NI ADDR SZ WCHAN  TTY          TIME CMD
+		4 S     0 11408 11402  0  80   0 - 28959 do_wai pts/1    00:00:00 bash
+		4 S     0 11439 11408  0  80   0 - 28959 do_wai pts/1    00:00:00 bash  
+		0 R     0 11454 11439  0  80   0 - 38309 -      pts/1    00:00:00 p
+		#第二个BASH的PPID是第一个BASH的pID，因为第二个BASH是第一个衍生出来的子进程
+
+		fork and exec (程序调用的流程)
+			进程都会借父进程以复制(fork)的方式产生一个一模一样的子进程(临时中间进程)
+			子进程(临时中间进程)以exec的方式来执行实际要执行的进程,最终成为一个子进程
+
+		系统或网络服务: 常驻在内存中的进程
+			ls等进程执行后就立即结束了,cron等进程启动后会一直在内存中,这叫做常驻在内存中的进程
+			常驻在内存中的进程都是负责一些系统提供的功能以服务用户的各项任务,因此也称为 服务
+				系统服务
+				网络服务,启动后会提供端口port来给外部客户端请求
+
+
+	任务管理(job control)
+		登录系统获取BASH后,在单一终端下同时执行多个任务的操作管理
+		可以出现提示符让你操作的环境就称为前台(foregroud),至于其它的任务就可以放入后台(backgroud)去暂停或运行
+		注意
+			这些任务所触发的进程必须来自于你的SHELL的子进程(只管理自己的bash)
+			前台: 可以控制与执行命令的这个环境称为前台的任务(foregroud)
+			后台: 可以自动执行的任务,你无法使用ctrl + c 终止它,可使用bg, fg调用该任务
+			后台中执行的进程不能等等terminal或shell的输入,如 vim
+
+			BASH只能管理自己的任务不能管理其他的任务,所以即使是root也不能将别人bash下面的job拿过来执行
+
+		直接将命令丢到后台执行 &
+			如tar -zcvpf /tmp/etc.tar.gz /etc &> /tmp/log.txt & #注意数据流重导向写入文件,不然会输出到屏幕
+			执行后会显示
+				[1] 13343 <== 等  任务号码与PID
+
+			完成后会有显示
+				[1]+ Done         tar -zcf....(执行的命令)
+
+		将目前的任务丢到后台中(暂停), ctrl -z
+
+			[root@study ~]# vim ~/.bashrc 
+			#在vim的一般模式下，按下[ctrl]-z这两个按键
+			[1]+ Stopped vim ~/.bashrc
+			[root@study ~]#    <==顺利取得了前景的操控权！
+			[root@study ~]# find / -print 
+			....(输出省略)....
+			# 此时萤幕会非常的忙碌！因为萤幕上会显示所有的档名。请按下[ctrl]-z 暂停
+			[2]+ Stopped find / -print
+
+			#+代表最近一个被丢进背景的工作，且目前在背景下预设会被取用的那个工作(与fg这个指令有关)！而那个Stopped则代表目前这个工作的状态。在预设的情况下，使用[ctrl]-z丢到背景当中的工作都是『暂停』的状态喔
+
+		[root@study ~]# jobs [-lrs] 
+		选项与参数：
+		-l ：除了列出job number 与指令串之外，同时列出PID 的号码；
+		-r ：仅列出正在背景run 的工作；
+		-s ：仅列出正在背景当中暂停(stop) 的工作。
+
+		范例一：观察目前的bash当中，所有的工作，与对应的PID 
+		[root@study ~]# jobs -l
+		[1]- 14566 Stopped vim ~/.bashrc
+		[2]+ 14567 Stopped find / -print
+
+		目前我有两个工作在背景当中，两个工作都是暂停的，而如果我仅输入fg时，那么那个[2]会被拿到前景当中来处理
+		其实+代表最近被放到背景的工作号码， -代表最近最后第二个被放置到背景中的工作号码。 而超过最后第三个以后的工作，就不会有+/-符号存在了
+
+		将背景工作拿到前景来处理：fg
+			[root@study ~]# fg %jobnumber 
+			选项与参数：
+			%jobnumber ：jobnumber 为工作号码(数字)。注意，那个% 是可有可无的！
+
+			范例一：先以jobs观察工作，再将工作取出： 
+			[root@study ~]# jobs -l
+			[1]- 14566 Stopped vim ~/.bashrc
+			[2]+ 14567 Stopped find / -print
+			[root@study ~]# fg       <==预设取出那个+的工作，亦即[2]。立即按下[ctrl]-z 
+			[root@study ~]# fg %1    <==直接规定取出的那个工作号码！再按下[ctrl]-z 
+			[root@study ~]# jobs -l 
+			[1] + 14566 Stopped vim ~/.bashrc
+			[2]- 14567 Stopped find / -print
+
+		让工作在背景下的状态变成运作中： bg
+			范例一：一执行find / -perm /7000 > /tmp/text.txt后，立刻丢到背景去暂停！
+			[root@study ~]# find / -perm /7000 > /tmp/text.txt 
+			#此时，请立刻按下[ctrl]-z暂停！
+			[3]+ Stopped find / -perm /7000 > /tmp/text.txt
+
+			范例二：让该工作在背景下进行，并且观察他！！
+			[root@study ~]# jobs ; bg %3 ; jobs
+			[1] Stopped vim ~/.bashrc
+			[2]- Stopped find / -print
+			[3]+   Stopped                  find / -perm /7000 > /tmp/text.txt
+			[3]+ find / -perm /7000 > /tmp/text.txt &
+			[1]- Stopped vim ~/.bashrc
+			[2]+ Stopped find / -print
+			[3]    Running                  find / -perm /7000 > /tmp/text.txt &
+			那个状态列～以经由Stop​​ping 变成了Running 啰！看到差异点，嘿嘿！指令列最后方多了一个& 的符号
+
+			
