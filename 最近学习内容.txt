@@ -4515,7 +4515,7 @@ linux账号管理与ACL权限设置
 	触发任何一个事件时,系统都会将它定义为一个进程,并给予一个ID，PID，同时根据触发这个进程的用户与相关属性,给予这个PID一组有效的权限
 
 	程序一般是放在磁盘中,用户通过执行触发后,加载到内存成为一个个体,进程,为了让操作系统管理,进程会有执行者的权限/属性等参数,以及进程需要的脚本与数据,最后再给一个PID，操作系统根据PID来判断进程是否具有执行权限
-		如BASH，用户登录后执行BASH，有PID，PID根据登录者的UID/GID遭遇来,每个用户登录的BASH获取的PID与UID/GID不一样,而当这个进程执行其他作业时,如touch,那由这个进程程衍生出来的其它进程一般状态下也会沿用这个进程的相关权限
+		如BASH，用户登录后执行BASH，有PID，PID根据登录者的UID/GID来,每个用户登录的BASH获取的PID与UID/GID不一样,而当这个进程执行其他作业时,如touch,那由这个进程程衍生出来的其它进程一般状态下也会沿用这个进程的相关权限
 
 		[root@localhost ~]# bash  #触发BASH
 		[root@localhost ~]# ps -l
@@ -4667,3 +4667,288 @@ linux账号管理与ACL权限设置
 
 			再次终端连入会发现脚本还是在执行
 			注意,nohup不支持BASH的内建命令，必须是外部指令
+
+	进程管理
+		仅观察自己的bash 相关程序： ps -l
+		范例一：将目前属于您自己这次登入的PID与相关资讯列示出来(只与自己的bash有关) 
+		[root@study ~]# ps -l 
+		F S UID PID PPID C PRI NI ADDR SZ WCHAN TTY TIME CMD
+		4 S 0 14830 13970 0 80 0 - 52686 poll_s pts/0 00:00:00 sudo
+		4 S 0 14835 14830 0 80 0 - 50511 wait pts/0 00:00:00 su
+		4 S 0 14836 14835 0 80 0 - 29035 wait pts/0 00:00:00 bash
+		0 R 0 15011 14836 0 80 0 - 30319 - pts/0 00:00:00 ps
+		
+
+		F：代表这个程序旗标(process flags)，说明这个程序的总结权限，常见号码有：
+		若为4 表示此程序的权限为root ；
+		若为1则表示此子程序仅进行复制(fork)而没有实际执行(exec)。
+
+		S：代表这个程序的状态(STAT)，主要的状态有：
+		R (Running)：该程式正在运作中；
+		S (Sleep)：该程式目前正在睡眠状态(idle)，但可以被唤醒(signal)。
+		D ：不可被唤醒的睡眠状态，通常这支程式可能在等待I/O 的情况(ex>列印)
+		T ：停止状态(stop)，可能是在工作控制(背景暂停)或除错(traced) 状态；
+		Z (Zombie)：僵尸状态，程序已经终止但却无法被移除至记忆体外。
+
+		UID/PID/PPID：代表『此程序被该UID 所拥有/程序的PID 号码/此程序的父程序PID 号码』
+
+		C：代表CPU 使用率，单位为百分比；
+
+		PRI/NI：Priority/Nice的缩写，代表此程序被CPU所执行的优先顺序，数值越小代表该程序越快被CPU执行。详细的PRI与NI将在下一小节说明。
+
+		ADDR/SZ/WCHAN：都与记忆体有关，ADDR 是kernel function，指出该程序在记忆体的哪个部分，如果是个running 的程序，一般就会显示『 - 』 / SZ 代表此程序用掉多少记忆体/ WCHAN 表示目前程序是否运作中，同样的， 若为- 表示正在运作中。
+
+		TTY：登入者的终端机位置，若为远端登入则使用动态终端介面(pts/n)；
+
+		TIME：使用掉的CPU 时间，注意，是此程序实际花费CPU 运作的时间，而不是系统时间；
+
+		CMD：就是command 的缩写，造成此程序的触发程式之指令为何
+
+
+
+		观察系统所有程序： ps aux
+		范例二：列出目前所有的正在记忆体当中的程序： 
+		[root@study ~]# ps aux 
+		USER PID %CPU %MEM VSZ RSS TTY STAT START TIME COMMAND
+		root 1 0.0 0.2 60636 7948 ? Ss Aug04 0:01 /usr/lib/systemd/systemd ...
+		root 2 0.0 0.0 0 0 ? S Aug04 0:00 [kthreadd]
+		.....(中间省略).....
+		root 14830 0.0 0.1 210744 3988 pts/0 S Aug04 0:00 sudo su -
+		root 14835 0.0 0.1 202044 2996 pts/0 S Aug04 0:00 su -
+		root 14836 0.0 0.1 116140 2960 pts/0 S Aug04 0:00 -bash 
+		.....(中间省略).....
+		root 18459 0.0 0.0 123372 1380 pts/0 R+ 00:25 0:00 ps aux
+		你会发现ps -l 与ps aux 显示的项目并不相同！在ps aux 显示的项目中，各栏位的意义为：
+
+		USER：该process 属于那个使用者帐号的？
+		PID ：该process 的程序识别码。
+		%CPU：该process 使用掉的CPU 资源百分比；
+		%MEM：该process 所占用的实体记忆体百分比；
+		VSZ ：该process 使用掉的虚拟记忆体量(Kbytes)
+		RSS ：该process 占用的固定的记忆体量(Kbytes)
+		TTY ：该process 是在那个终端机上面运作，若与终端机无关则显示?，另外， tty1-tty6 是本机上面的登入者程序，若为pts/0 等等的，则表示为由网路连接进主机的程序。
+		STAT：该程序目前的状态，状态显示与ps -l 的S 旗标相同(R/S/T/Z)
+		START：该process 被触发启动的时间；
+		TIME ：该process 实际使用CPU 运作的时间。
+		COMMAND：该程序的实际指令为何？
+
+		僵尸(zombie) 』程序是什么？通常，造成僵尸程序的成因是因为该程序应该已经执行完毕，或者是因故应该要终止了， 但是该程序的父程序却无法完整的将该程序结束掉，而造成那个程序一直存在记忆体当中。如果你发现在某个程序的CMD 后面还接上<defunct> 时，就代表该程序是僵尸程序啦，例如：
+
+		apache 8683 0.0 0.9 83384 9992 ? Z 14:33 0:00 /usr/sbin/httpd <defunct>
+		当系统不稳定的时候就容易造成所谓的僵尸程序，可能是因为程式写的不好啦，或者是使用者的操作习惯不良等等所造成。如果你发现系统中很多僵尸程序时，记得啊！要找出该程序的父程序，然后好好的做个追踪，好好的进行主机的环境最佳化啊！看看有什么地方需要改善的，不要只是直接将他kill 掉而已呢
+		通常僵尸程序都已经无法控管，而直接是交给systemd 这支程式来负责了，偏偏systemd 是系统第一支执行的程式， 他是所有程式的父程式！我们无法杀掉该程式的(杀掉他，系统就死掉了！)，所以啰，如果产生僵尸程序， 而系统过一阵子还没有办法透过核心非经常性的特殊处理来将该程序删除时，那你只好透过reboot 的方式来将该程序抹去了！
+
+		top：动态观察程序的变化
+		相对于ps 是撷取一个时间点的程序状态， top 则可以持续侦测程序运作的状态！使用方式如下：
+
+		[root@study ~]# top [-d数字] | top [-bnp] 
+		选项与参数：
+		-d ：后面可以接秒数，就是整个程序画面更新的秒数。预设是5 秒；
+		-b ：以批次的方式执行top ，还有更多的参数可以使用喔！
+		      通常会搭配资料流重导向来将批次的结果输出成为档案。
+		-n ：与-b 搭配，意义是，需要进行几次top 的输出结果。
+		-p ：指定某些个PID 来进行观察监测而已。
+		在top 执行过程当中可以使用的按键指令：
+			? ：显示在top 当中可以输入的按键指令；
+			P ：以CPU 的使用资源排序显示；
+			M ：以Memory 的使用资源排序显示；
+			N ：以PID 来排序喔！
+			T ：由该Process 使用的CPU 时间累积(TIME+) 排序。
+			k ：给予某个PID 一个讯号(signal)
+			r ：给予某个PID 重新制订一个nice 值。
+			q ：离开top 软体的按键
+
+
+			范例一：每两秒钟更新一次top ，观察整体资讯： 
+			[root@study ~]# top -d 2 
+			top - 00:53:59 up 6:07, 3 users,   load average: 0.00, 0.01, 0.05 
+			Tasks : 179 total, 2 running, 177 sleeping, 0 stopped,    0 zombie 
+			%Cpu(s): 0.0 us, 0.0 sy, 0.0 ni,100.0 id,   0.0 wa , 0.0 hi, 0.0 si, 0.0 st
+			KiB Mem : 2916388 total, 1839140 free, 353712 used, 723536 buff/cache
+			KiB Swap: 1048572 total, 1048572 free,         0 used . 2318680 avail Mem
+			     <==如果加入k或r时，就会有相关的字样出现在这里喔！
+			  PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND    
+			18804 root 20 0 130028 1872 1276 R 0.5 0.1 0:00.02 top
+			    1 root 20 0 60636 7948 2656 S 0.0 0.3 0:01.70 systemd
+			    2 root 20 0 0 0 0 S 0.0 0.0 0:00.01 kthreadd
+			    3 root 20 0 0 0 0 S 0.0 0.0 0:00.00 ksoftirqd/0
+
+			    第一行(top...)：这一行显示的资讯分别为：
+				目前的时间，亦即是00:53:59 那个项目；
+				开机到目前为止所经过的时间，亦即是up 6:07, 那个项目；
+				已经登入系统的使用者人数，亦即是3 users, 项目；
+				系统在1, 5, 15分钟的平均工作负载。我们在第十五章谈到的batch 工作方式为负载小于0.8就是这个负载啰！代表的是1, 5, 15分钟，系统平均要负责运作几个程序(工作)的意思。越小代表系统越闲置，若高于1得要注意你的系统程序是否太过繁复了！
+
+				第二行(Tasks...)：显示的是目前程序的总量与个别程序在什么状态(running, sleeping, stopped, zombie)。比较需要注意的是最后的zombie 那个数值，如果不是0 ！好好看看到底是那个process 变成僵尸了吧？
+
+				第三行(%Cpus...)：显示的是CPU 的整体负载，每个项目可使用? 查阅。需要特别注意的是wa 项目，那个项目代表的是I/O wait， 通常你的系统会变慢都是I/O 产生的问题比较大！因此这里得要注意这个项目耗用CPU 的资源喔！另外，如果是多核心的设备，可以按下数字键『1』来切换成不同CPU 的负载率。
+
+				第四行与第五行：表示目前的实体记忆体与虚拟记忆体(Mem/Swap) 的使用情况。再次重申，要注意的是swap 的使用量要尽量的少！如果swap 被用的很大量，表示系统的实体记忆体实在不足！
+
+				第六行：这个是当在top 程式当中输入指令时，显示状态的地方。
+				至于top 下半部分的画面，则是每个process 使用的资源情况。比较需要注意的是：
+
+				PID ：每个process 的ID 啦！
+				USER：该process 所属的使用者；
+				PR ：Priority 的简写，程序的优先执行顺序，越小越早被执行；
+				NI ：Nice 的简写，与Priority 有关，也是越小越早被执行；
+				%CPU：CPU 的使用率；
+				%MEM：记忆体的使用率；
+				TIME+：CPU 使用时间的累加；
+
+			范例二：将top的资讯进行2次，然后将结果输出到/tmp/top.txt 
+			[root@study ~]# top -b -n 2 > /tmp/top.txt 
+			#这样一来，嘿嘿！就可以将top的资讯存到/tmp/top.txt档案中了。
+
+			范例三：我们自己的bash PID可由$$变数取得，请使用top持续观察该PID 
+			[root@study ~]# echo $$ 
+			14836   <==就是这个数字！他是我们bash的PID 
+			[root@study ~]# top -d 2 -p 14836
+			top - 01:00:53 up 6:14, 3 users, load average: 0.00, 0.01, 0.05
+			Tasks: 1 total, 0 running, 1 sleeping, 0 stopped, 0 zombie
+			%Cpu(s): 0.0 us, 0.1 sy, 0.0 ni, 99.9 id, 0.0 wa, 0.0 hi, 0.0 si, 0.0 st
+			KiB Mem : 2916388 total, 1839264 free, 353424 used, 723700 buff/cache
+			KiB Swap: 1048572 total, 1048572 free, 0 used. 2318848 avail Mem
+
+			  PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND 
+			14836 root 20 0 116272 3136 1848 S 0.0 0.1 0:00.07 bash
+
+
+			范例四：承上题，上面的NI值是0 ，想要改成10的话？
+			#在范例三的top画面当中直接按下r之后，会出现如下的图样！
+			top - 01:02:01 up 6:15, 3 users, load average: 0.00, 0.01, 0.05
+			Tasks: 1 total, 0 running, 1 sleeping, 0 stopped, 0 zombie
+			%Cpu(s): 0.1 us, 0.0 sy, 0.0 ni, 99.9 id, 0.0 wa, 0.0 hi, 0.0 si, 0.0 st
+			KiB Mem : 2916388 total, 1839140 free, 353576 used, 723672 buff/cache
+			KiB Swap: 1048572 total, 1048572 free, 0 used. 2318724 avail Mem
+			PID to renice [default pid = 14836] 14836 
+			  PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND
+			14836 root 20 0 116272 3136 1848 S 0.0 0.1 0:00.07 bash
+			在你完成上面的动作后，在状态列会出现如下的资讯：
+
+			Renice PID 14836 to value 10    <==这是nice值
+			  PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND
+
+		pstree 可以用来查看进程树,查看父进程
+
+	进程的管理
+		进程如何互相管理?其实是通过给予该进程一个信号(signal),去告知该进程你想要让它做什么
+
+		代号	名称	内容
+		1	SIGHUP	启动被终止的程序，可让该PID 重新读取自己的设定档，类似重新启动
+		2	SIGINT	相当于用键盘输入[ctrl]-c 来中断一个程序的进行
+		9	SIGKILL	代表强制中断一个程序的进行，如果该程序进行到一半， 那么尚未完成的部分可能会有『半产品』产生，类似vim会有.filename.swp 保留下来。
+		15	SIGTERM	以正常的结束程序来终止该程序。由于是正常的终止， 所以后续的动作会将他完成。不过，如果该程序已经发生问题，就是无法使用正常的方法终止时， 输入这个signal 也是没有用的。
+		19	SIGSTOP	相当于用键盘输入[ctrl]-z 来暂停一个程序的进行
+		#只需记 1 9 15即可
+
+		通过kill或killall发送信号给进程
+
+		kill -signal PID
+			注意kill后接的数字是PID，KILL后面如果是%number则是后台任务,要区别
+
+			以ps 找出rsyslogd 这个程序的PID 后，再使用kill 传送讯息，使得rsyslogd 可以重新读取设定档。
+			答：
+			由于需要重新读取设定档，因此signal 是1 号。至于找出rsyslogd 的PID 可以是这样做：
+			ps aux | grep 'rsyslogd' | grep -v 'grep'| awk '{print $2}'
+			接下来则是实际使用kill -1 PID，因此，整串指令会是这样：
+			kill -SIGHUP $(ps aux | grep 'rsyslogd' | grep -v 'grep'| awk '{print $2}')
+			如果要确认有没有重新启动syslog ，可以参考登录档的内容，使用如下指令查阅：
+			tail -5 /var/log/messages
+			如果你有看到类似『Aug 5 01:25:02 study rsyslogd: [origin software="rsyslogd" swVersion="7.4.7" x-pid="742" x-info="http://www.rsyslog .com"] rsyslogd was HUPed』之类的字样，就是表示rsyslogd 在8/5 有重新启动(restart) 过了！
+
+		killall -signal 命令名称
+			[root@study ~]# killall [-iIe] [command name] 
+			选项与参数：
+			-i ：interactive 的意思，互动式的，若需要删除时，会出现提示字元给使用者；
+			-e ：exact 的意思，表示『后面接的command name 要一致』，但整个完整的指令
+			      不能超过15 个字元。
+			-I ：指令名称(可能含参数)忽略大小写。
+
+			范例一：给予rsyslogd这个指令启动的PID一个SIGHUP的讯号 
+			[root@study ~]# killall -1 rsyslogd 
+			#如果用ps aux仔细看一下，若包含所有参数，则/usr/sbin/rsyslogd -n才是最完整的！
+
+			范例二：强制终止所有以httpd启动的程序(其实并没有此程序在系统内) 
+			[root@study ~]# killall -9 httpd
+
+			范例三：依次询问每个bash程式是否需要被终止运作！
+			[root@study ~]# killall -i -9 bash 
+			Signal bash(13888) ? (y/N) n  <==这个不杀！
+			Signal bash(13928) ? (y/N) n  <==这个不杀！
+			Signal bash(13970) ? (y/N) n  <==这个不杀！
+			Signal bash(14836) ? (y/N) y  <==这个杀掉！
+			#具有互动的功能！可以询问你是否要删除bash这个程式。要注意，若没有-i的参数，
+			# 所有的bash 都会被这个root 给杀掉！包括root 自己的bash 喔！^_^
+
+
+		进程的执行顺序
+			进程的执行顺序与进程的优先级(Priority)与CPU的调度有关
+
+			CPU调度
+				指的是每个进程被CPU运行的规则,cpu调度与操作系统有关
+
+			linux系统会给予进程一个所谓的优先级(priority,PRI),PRI值越低代表越优先,PRI值是由内核动态调整的,用户无法直接整PRI值
+
+			[root@study ~]# ps -l 
+			FS UID PID PPID C PRI NI ADDR SZ WCHAN TTY TIME CMD
+			4 S 0 14836 14835 0   90 10 - 29068 wait pts/0 00:00:00 bash
+			0 R 0 19848 14836 0   90 10 - 30319 - pts/0 00:00:00 ps
+			 #你应该要好奇，怎么我的NI已经是10了？还记得刚刚top的测试吗？我们在那边就有改过一次喔！
+			 由于PRI 是核心动态调整的，我们使用者也无权去干涉PRI ！那如果你想要调整程序的优先执行序时，就得要透过Nice 值了！Nice 值就是上表的NI 啦！一般来说， PRI 与NI 的相关性如下：
+
+				PRI(new) = PRI(old) + nice
+
+			所以，当nice值为负值时，那么该程序就会降低PRI值，亦即会变的较优先被处理。此外，你必须要留意到：
+
+				nice 值可调整的范围为-20 ~ 19 ；
+				root 可随意调整自己或他人程序的Nice 值，且范围为-20 ~ 19 ；
+				一般使用者仅可调整自己程序的Nice 值，且范围仅为0 ~ 19 (避免一般用户抢占系统资源)；
+				一般使用者仅可将nice 值越调越高，例如本来nice 为5 ，则未来仅能调整到大于5；
+
+			这也就是说，要调整某个程序的优先执行序，就是『调整该程序的nice 值』啦！那么如何给予某个程序nice 值呢？有两种方式，分别是：
+
+				一开始执行程式就立即给予一个特定的nice 值：用nice 指令；
+				调整某个已经存在的PID 的nice 值：用renice 指令。
+
+			nice ：新执行的指令即给予新的nice 值
+				[root@study ~]# nice [-n数字] command 
+				选项与参数：
+				-n ：后面接一个数值，让原本的nice 加上这个新的数值之意。修改后的最终数值的范围则为-20 ~ 19。
+
+				范例一：用root让原本的nice再减少5 (-5)，用于执行vim ，并观察该程序！
+				[root@study ~]# nice -n -5 vim &
+				[1] 19865
+				[root@study ~]# ps -l
+				FS UID PID PPID C PRI NI ADDR SZ WCHAN TTY TIME CMD
+				4 S 0 14836 14835 0 90 10 - 29068 wait pts/0 00:00:00 bash
+				4 T 0 19865 14836 0   85 5 - 37757 signal pts/0 00:00:00 vim
+				0 R 0 19866 14836 0 90 10 - 30319 - pts/0 00:00:00 ps
+				# 原本的bash PRI 为90 ，所以vim 预设应为90。不过由于给予nice 为-5 ，
+				# 因此vim 的PRI 降低了！RPI 与NI 各减5 ！但不一定每次都是正好相同喔！因为核心会动态调整
+
+				[root@study ~]# kill -9 %1  <==测试完毕将vim关闭
+
+				通常什么时候要将nice 值调大呢？举例来说，系统的背景工作中， 某些比较不重要的程序之进行：例如备份工作！由于备份工作相当的耗系统资源， 这个时候就可以将备份的指令之nice 值调大一些，可以使系统的资源分配的更为公平！
+
+			renice ：已存在进程的nice 重新调整
+				[root@study ~]# renice [number] PID 
+				选项与参数：
+				PID ：某个程序的ID 啊！
+
+				范例一：找出自己的bash PID ，并将该PID的nice调整到-5 
+				[root@study ~]# ps -l
+				FS UID PID PPID C PRI NI ADDR SZ WCHAN TTY TIME CMD
+				4 S 0 14836 14835 0   90 10 - 29068 wait pts/0 00:00:00 bash
+				0 R 0 19900 14836 0 90 10 - 30319 - pts/0 00:00:00 ps
+
+				[root@study ~]# renice -5 14836
+				14836 (process ID) old priority 10, new priority -5
+
+				[root@study ~]# ps -l
+				FS UID PID PPID C PRI NI ADDR SZ WCHAN TTY TIME CMD
+				4 S 0 14836 14835 0   75 -5 - 29068 wait pts/0 00:00:00 bash
+				0 R 0 19910 14836 0   75 -5 - 30319 - pts/0 00:00:00 ps
+				如果要调整的是已经存在的某个程序的话，那么就得要使用renice 了。使用的方法很简单， renice 后面接上数值及PID 即可。因为后面接的是PID ，所以你务必要以ps 或者其他程序观察的指令去找出PID 才行啊！
+
+				由上面这个范例当中我们也看的出来，虽然修改的是bash那个程序，但是该程序所触发的ps指令当中的nice也会继承而为-5喔！了解了吧！整个nice值是可以在父程序-->子程序之间传递的呢！另外，除了renice之外，其实那个top同样的也是可以调整nice值的！
