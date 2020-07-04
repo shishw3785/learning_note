@@ -5132,3 +5132,175 @@ linux账号管理与ACL权限设置
 
 			lsof -u root | grep 'bash'
 			#列出用户root的bash进程所开户使用的文件
+
+		pidof 
+			找出某个正在执行的进程的PID
+
+			pidof systemd rsyslogd
+			1 3063
+
+
+	selinux
+		Security Enhanced Linux,安全强化Linux的意思
+		最美国国家安全局(NSA)开发,当初开发的原因是很多企业发现,系统出现问题的原因大部分在于(内部员工的资源误用),实际由外部发动的攻击反而没那么严重
+		资源误用,举例来说如果有个不是很懂系统的系统管理员为了自己设置方便,将网站网录/var/www/html的权限设置为777,这样的话所有的进程都可对该目录读写，只要该服务启动后又是面向的是internet,有心人接触到这个进程,就会乱写东西进去
+
+		selinux是在进行进程,文件等详细权限配置时依据的一个内核模块,由于启动网络服务也是进程,因此也能控制网络服务能否读写资源的一道关卡
+
+		传统的文件权限与账号的关系: 自主访问控制(DAC)
+			系统的账号分为root与一般用户,root拥用所有的权限,当某个进程想要对文件进行读写时,系统就会根据该进程的拥有者与用户组,比对文件的权限,权限通过才可以读写文件
+
+			缺点
+				root具有最高的权限,如果某进程被有心人获取,肯该进程属于root，那该进程就可以在系统上对任何资源读写
+				如某个目录不小心设置为777,那么该目录任何人都可以读写
+
+		以规则策略制定特定进程读取特定的文件: 强制访问控制MAC
+			针对特定的进程与特定的文件资源来管理,如即使是root,那么在使用不同进程时,能获取的权限也不一定是root,针对控制的主体变成了进程而不是用户，进程也不能任意使用系统资源,因为每个系统资源也也会针对该主体进程设置了可使用的权限
+
+			如httpd这个进程仅能在/var/www这个目录下读写,进程想要去其它目录读写还需要开放相应的权限才行
+
+		selinux 运行模式
+			主体(subject)
+				selinux管理的是进程,主体与进程划上等号
+			目标(object)
+				主体进程能否读写的目标资源(文件系统)
+			策略(policy)
+				由于进程与文件数量庞大,因此selinux会依据某些服务来订制基本的读写安全性策略,策略还会有详细的规则来指定不同的服务是否开放某些资源的读写，目前centos 7 里面仅提供三个主要的策略
+					targeted 针对网络服务限制多,针对本机限制较少,默认策略
+					minimum 由target自定义而来,仅针对选择的进程来保护
+					mis 完整的selinux限制,较为严格
+					建议使用默认的targeted就好
+
+		主本(subject) --(请求)> selinux --> 安全上下文--(yes)->目标
+								  |			   |				|
+								分析策略	       no 				|
+								  |				|	            能否存取还
+								  策略          拒绝             参考文件的
+								  rule1	  						rwx
+								  rule2
+
+		可看主体如何获取目录,1）必须要先通过selinux策略的规则放行后,才可以与目标资源进行安全上下文的比对 2)比对失败则不法读写目标，苦比对成功则可以读写,最终能否读定还与文件的rwx有关
+
+		安全上下文
+			targetet的策略已经帮订好非常多的规则,我们只要知道如何开启/关闭即可,但安全上下文可能要自行配置,可以将安全上下文当作selinux内必备的rwx
+
+			安全上下文存在于主体进程与文件资源中,进程在内存中,所以安全上下文存入没问题.而文件的安全上下文记录则是放到文件的inode内,因此进程想要读取文件资源,也要读取inode,在Inode内比对安全上下文与rwx是否正确而给予适当的权限
+
+			查看安全上下文 ls -Z （selinux要开启
+
+			#先来观察一下root家目录底下的『文件的SELinux相关资讯』 
+			[root@study ~]# ls -Z 
+			-rw-------. root root system_u:object_r:admin_home_t:s0      anaconda-ks. cfg
+			-rw-r--r--. root root system_u:object_r:admin_home_t:s0      initial-setup-ks.cfg
+			-rw-r--r--. root root unconfined_u:object_r:admin_home_t:s0 regular_express.txt
+			 #上述特殊字体的部分，就是安全性本文的内容！鸟哥仅列出数个预设的文件而已，
+			# 本书学习过程中所写下的文件则没有列在上头喔！
+			如上所示，安全性本文主要用冒号分为三个栏位，这三个栏位的意义为：
+
+			Identify:role:type
+			身份识别:角色:类型
+			这三个栏位的意义仔细的说明一下吧：
+
+			身份识别(Identify)：
+			相当于帐号方面的身份识别！主要的身份识别常见有底下几种常见的类型：
+
+			unconfined_u：不受限的用户，也就是说，该文件来自于不受限的进程所产生的！一般来说，我们使用可登入帐号来取得bash之后，预设的bash环境是不受SELinux管制的～因为bash并不是什么特别的网路服务！因此，在这个不受SELinux所限制的bash进程所产生的文件，其身份识别大多就是unconfined_u这个『不受限』用户啰！
+			system_u：系统用户，大部分就是系统自己产生的文件啰！
+			基本上，如果是系统或软体本身所提供的文件，大多就是system_u 这个身份名称，而如果是我们用户透过bash 自己建立的文件，大多则是不受限的unconfined_u 身份～如果是网路服务所产生的文件，或者是系统服务运作过程产生的文件，则大部分的识别就会是system_u 啰！
+
+			因为鸟哥这边教大家使用文字界面来产生许多的资料，因此你看上面的三个文件中，系统安装主动产生的anaconda-ks.cfs 及initial-setup-ks.cfg 就会是system_u，而我们自己从网路上面抓下来的regular_express.txt 就会是unconfined_u 这个识别啊！
+
+			角色(Role)：
+			透过角色栏位，我们可以知道这个资料是属于进程、文件资源还是代表使用者。一般的角色有：
+
+			object_r：代表的是文件或目录等文件资源，这应该是最常见的啰；
+			system_r：代表的就是进程啦！不过，一般使用者也会被指定成为system_r喔！
+			你也会发现角色的栏位最后面使用『 _r 』来结尾！因为是role 的意思嘛！
+
+			类型(Type) (最重要！)：
+			在预设的targeted 政策中， Identify 与Role 栏位基本上是不重要的！重要的在于这个类型(type) 栏位！基本上，一个主体进程能不能读取到这个文件资源，与类型栏位有关！而类型栏位在文件与进程的定义不太相同，分别是：
+
+			type：在文件资源(Object) 上面称为类型(Type)；
+			domain：在主体进程(Subject) 则称为域(domain) 了！
+			domain 需要与type 搭配，则该进程才能够顺利的读取文件资源啦！
+
+		进程与文件selinux类型字段的相关性
+			再来观察一下系统『进程的SELinux相关资讯』 
+			[root@study ~]# ps -eZ
+			LABEL PID TTY TIME CMD
+			system_u:system_r:init_t:s0 1 ? 00:00:03 systemd
+			system_u:system_r:kernel_t:s0 2 ? 00:00:00 kthreadd
+			system_u:system_r :kernel_t:s0 3 ? 00:00:00 ksoftirqd/0
+			 .....(中间省略).....
+			unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 31513 ? 00:00:00 sshd
+			unconfined_u:unconfined_r :unconfined_t:s0-s0:c0.c1023 31535 pts/0 00:00:00 bash
+			 #基本上进程主要就分为两大类，一种是系统有受限的system_u:system_r，另一种则可能是用户自己的，
+			# 比较不受限的程序(通常是本机用户自己执行的进程)，亦即是unconfined_u:unconfined_r 这两种！
+
+			身份识别	角色	该对应在targeted 的意义
+			unconfined_u	unconfined_r	一般可登入用户的进程啰！比较没有受限的进程之意！大多数都是用户已经顺利登入系统(不论是网路还是本机登入来取得可用的shell) 后， 所用来操作系统的进程！如bash, X window 相关软体等。
+			system_u	system_r	由于为系统帐号，因此是非交谈式的系统运作程序，大多数的系统进程均是这种类型！
+			#在target策略下,其实最重要的字段就是类型字段(type),主体与目标之间是否具有可以读写的权限,与进程的domain及文件的type有关
+
+			# 1.先看看crond这个『进程』的安全上下文内容： 
+			[root@study ~]# ps -eZ | grep cron 
+			system_u:system_r: crond_t :s0-s0:c0.c1023 1338 ? 00:00:01 crond
+			system_u:system_r:crond_t:s0-s0:c0.c1023 1340 ? 00:00:00 atd
+			# 这个安全本文的类型名称为crond_t 格式！
+
+			# 2.再来瞧瞧执行文件、配置文件等等的安全本上下文内容是什么！
+			[root@study ~]# ll -Zd /usr/sbin/crond /etc/crontab /etc/cron.d 
+			drwxr-xr-x. root root system_u:object_r: system_cron_spool_t :s0 /etc/cron.d
+			-rw-r--r--. root root system_u:object_r: system_cron_spool_t :s0 /etc/crontab
+			-rwxr-xr-x. root root system_u:object_r: crond_exec_t :s0 /usr/sbin/crond
+
+			1) 首先我们触发一个可执行的目标文件,即具有crond_exex这个类型的/usr/sbin/crond文件
+			2）该文件的类型会让这个文件所造成的主体进程(subject)具有crond这个域(domain),我们的策略针对这个域已经制定了许多规则,其中包括这个域可以读取的目标资源类型
+			3）由于crond domain被设置为可以读取system_cron_spool_t这个类型的目标文件(object),因此你的配置文件放到/etc/cron.d目录下就能够被crond那个进程读取
+			4）最终能不能读到正确的数据,还是要看rwx是否符合linux的权限
+
+		selinux 3种模式的启动 关闭与查看
+			Enfofcing 强制模式,代表selinux运行中,且已经正确开始限制domain/type
+			Permissive 宽容模式,代表SElinux运行中,不过仅会有警告信息并不会实际限制domain/type的读写,此模式可用来debug
+			Disabled 关闭模式,selinux并没有实际运行
+
+			并不是所有的进程都会被selinux所管制,通过ps -eZ可查看进程有没有爱限(confined)
+
+			找一找crond 与bash 这两只进程是否有被限制吧？
+
+			[root@study ~]# ps -eZ | grep -E 'cron|bash' 
+			system_u:system_r: crond_t :s0-s0:c0.c1023 1340 ? 00:00:00 atd
+			unconfined_u:unconfined_r: unconfined_t :s0-s0:c0.c1023 13888 tty2 00:00:00 bash
+			unconfined_u:unconfined_r: unconfined_t :s0-s0:c0.c1023 28054 pts/0 00:00:00 bash
+			unconfined_u:unconfined_r: unconfined_t :s0-s0:c0.c1023 28094 pts/0 00:00:00 bash
+			system_u:system_r: crond_t :s0-s0:c0.c1023 28174 ? 00:00:00 crond
+
+			crond确实是受限的主体进程,而bash因为是本机进程,就是不爱限(unconfined)的类型,也就是说bash是直接去比对rwx
+
+			查看目前的selinux模式
+			[root@localhost ~]# getenforce 
+			Enforcing
+
+			查看selinux的策略(policy)
+			[root@study ~]# sestatus [-vb] 
+			选项与参数：
+			-v ：检查列于/etc/sestatus.conf 内的文件与进程的安全性上下文内容；
+			-b ：将目前策略的规则布林值列出，亦即某些规则(rule) 是否要启动(0/1) 之意；
+
+			范例一：列出目前的SELinux使用哪个策略(Policy)？
+			[root@study ~]# sestatus 
+			SELinux status: enabled            <==是否启动SELinux 
+			SELinuxfs mount: /sys/fs/selinux    <==SELinux的相关文件挂载点 
+			SELinux root directory: /etc/selinux       <==SELinux的根目录所在 
+			Loaded policy name: targeted           <==目前的策略是什么？
+			Current mode: enforcing          <==目前的模式 
+			Mode from config file: enforcing          <==目前配置文件规范的SELinux模式 
+			Policy MLS status: enabled            <==是否含有MLS的模式机制 
+			Policy deny_unknown status: allowed            <==是否预设抵挡未知的主体进程
+			Max kernel policy version: 28 
+
+			selinux的配置文件
+			[root@study ~]# vim /etc/selinux/config 
+			SELINUX=enforcing      <==调整enforcing|disabled|permissive 
+			SELINUXTYPE=targeted   <==目前仅有targeted, mls, minimum三种政策
+			#可直接修改
