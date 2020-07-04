@@ -5302,5 +5302,27 @@ linux账号管理与ACL权限设置
 			selinux的配置文件
 			[root@study ~]# vim /etc/selinux/config 
 			SELINUX=enforcing      <==调整enforcing|disabled|permissive 
-			SELINUXTYPE=targeted   <==目前仅有targeted, mls, minimum三种政策
+			SELINUXTYPE=targeted   <==目前仅有targeted, mls, minimum三种策略
 			#可直接修改
+
+			selinux的启动与关闭
+				如果修改策略,需要重新启动,如果Enforcing或Permissive改成Disabled或由Disabled改成其它两个,也必须要重启,这是因为selinux是整合到内核中,只可以在SElinux运行下切换成为强制宽容模式,不能直接关闭selinux
+
+				如果由Disabled转到记动selinux模式如Enforcing,由于系统必须要针对文件写入安全上下文的信息,因为启动过程会花不少时间在等待重新写入,而且写完之后还要再重启一次,要花一些时间
+
+				selinux在Enforcing与Permissive之间切换的方法
+
+				[root@study ~]# setenforce [0|1] 
+				选项与参数：
+				0 ：转成permissive 宽容模式；
+				1 ：转成Enforcing 强制模式
+
+				范例一：将SELinux在Enforcing与permissive之间切换与观察 
+				[root@study ~]# setenforce 0 
+				[root@study ~]# getenforce
+				Permissive
+				[root@study ~]# setenforce 1 
+				[root@study ~]# getenforce
+				Enforcing
+
+				如从Disabled切换成Enforcing之后有一堆服务无法顺利启动(提示/lib/xxx无权限),大多是因为重新写入SElinux类型出错,使用Permissive就没有这个错误,可以在permissive状态下 restorecon -Rv重新还原所有的selinux类型
