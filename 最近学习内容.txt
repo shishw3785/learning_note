@@ -2183,6 +2183,7 @@ shell脚本
 		  ;;
 
 		  *)    #最后一个变量内容都用*, 代表其他值,但不包含上面的变量内容
+		  程序段
 		  ;;
 	esac      #结尾反过来写
 
@@ -5364,3 +5365,52 @@ linux账号管理与ACL权限设置
 			#再去瞧瞧这个/var/log/cron的内容，应该就没有错误讯息了
 
 			#服务权限或运行不了,用restorecon即可, selinux一般都是不开，略过selinux学习
+
+
+
+认识系统服务
+
+	daemon与服务
+		常驻在内存的进程一般称为服务,服务提供系统或网络功能如系统周期性任务(cron),在内存的服务(service)就是由crond来提供守望护的,daemon就等于serivce
+		服务的进程(daemon)都会以d结尾,如crond,httpd等
+
+		早期的system V 的init管理
+			服务的启动与关闭都是在/etc/init.d目录下
+				/etc/init.d/daemon start/restart/stop/status
+			服务启动的分类
+				单独的服务
+				超级守望护进程
+					xined总程序统一管理启动唤醒,缺点唤醒有一点实际的延迟
+				服务的依赖
+				运行级别的分类等相关
+				启动的运行级别
+					chkconfig daemon on/of
+
+(插入学习)
+	rsync
+		rsync -avz --delete /src/abc/ /det
+		#/src/abc没有/,会把abc目录内空包括abc目录全部复制到/det目录下,如果是/src/abc/只会把abc目录下的文件复制到/det,delete是删除/abc目录下没有而/det下有的文件
+
+		rsync daemon模式可以在被同步的机子开启rsyncd服务等待客户端连接,然后在客户端安装rsync与inotify-tools来实时监控客户端的数据目录文件增改来同步到rsync服务端
+
+
+
+	systemd使用的unit分类
+		centos 7 后,redhad就启用了旧版的system V 服务管理,改用systemd,优点
+			并行处理所有服务,加速开机服务
+				旧的init启动脚本是一项一项任务启动,现在都是多核内核架构了，一项一项太慢
+			一经要求就响应的on-daemon启动方式
+				systemd全部仅有一个system搭配systemctl命令处理,且systemd常驻内存,效率高
+			服务依赖性的知觉查检查
+				B记动依赖A，若A没启动仅手动启动B,system会自动帮启动A
+			依daemon的分类
+				依据service,socket,target,path等分类
+			将多个daemons集合成为一个群组(target)
+				集合多个daemons，即执行某个target就是执行多个daemon的意思
+			向下兼容旧的Init服务脚本
+
+			注意
+				运行级别对应上,大概仅有1,3,5有对应system的某些target类弄(与旧片相比)
+				全部的system都由systemctl这个管理程序管理,systemctl支持语法有限,不像旧的/etc/init.d/daemon可自定参数,systemd不能自定参数
+				如果某个服务手动去执行如(手动输入crond启动crond服务),那systemd无法检测该服务就无法进一步管理
+				systemd启动过程中,无法与管理员通过标准输入信息,所以自行偏写systemd启动设置时,要取消交互机制
