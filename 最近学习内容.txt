@@ -5414,3 +5414,22 @@ linux账号管理与ACL权限设置
 				全部的system都由systemctl这个管理程序管理,systemctl支持语法有限,不像旧的/etc/init.d/daemon可自定参数,systemd不能自定参数
 				如果某个服务手动去执行如(手动输入crond启动crond服务),那systemd无法检测该服务就无法进一步管理
 				systemd启动过程中,无法与管理员通过标准输入信息,所以自行偏写systemd启动设置时,要取消交互机制
+
+		systemd的配置文件放置目录
+			/usr/lib/systemd/system 每个服务的最主要的启动脚本设置,类似以前的/etc/init.d下面的文件
+			/run/systemd/system 系统执行过程中的产生的服和脚本,优先级比上面的高
+			/etc/systemd/system 管理员概据主机的系统的需求建立的服务脚本，执行优先级比/run/systemd/system高,系统启不启动某些服务其实是看这里,里面是一堆链接文件,而实际执行的systmed启动脚本配置文件其实是放在/usr/lib/systemd/system,所以要修改是去/usr/lib/systemd/system修改,/etc/systemd/system仅是链接到正确的执行脚本配置文件而已
+
+		systemd unit类型分类说明
+			.service
+				一般服务类型,包括服务器本身的本地服务用网络服务,也是最常见的类型
+			.socket
+				内部数据交换的socket服务
+			.target
+				执行环境类型,其实是一群unit的集合如multi-user.tartget,执行它就是执行一堆服务
+			.mount
+			.automount
+			.path
+				检测特定文件或目灵的类型
+			.timer
+				循环执行的服务
