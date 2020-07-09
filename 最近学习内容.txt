@@ -5722,3 +5722,45 @@ linux账号管理与ACL权限设置
 
 			多重的重复设置方式
 				/usr/lib/systemd/system/getty@.service #详细参考鸟哥
+
+		自做服务
+
+			[root@study ~]# vim /backups/backup.sh 
+			#!/bin/bash
+
+			source="/etc /home /root /var/lib /var/spool/{cron,at,mail}"
+			target="/backups/backup-system-$(date +%Y-%m-%d).tar.gz"
+			[ ! -d /backups ] && mkdir /backups
+			tar -zcvf ${target} ${source} &> /backups/backup.log
+
+			[root@study ~]# chmod a+x /backups/backup.sh 
+
+
+
+			[root@study ~]# vim /etc/systemd/system/backup.service 
+			[Unit]
+			Description=backup my server
+			Requires=atd.service
+
+			[Service]
+			Type=simple
+			ExecStart=/bin/bash -c " echo /backups/backup.sh | at now"
+
+			[Install]
+			WantedBy=multi-user.target 
+			#因为ExecStart里面有用到at这个指令，因此， atd.service就是一定要的服务！
+
+			[root@study ~]# systemctl daemon-reload 
+			[root@study ~]# systemctl start backup.service 
+			[root@study ~]# systemctl status backup.service
+			backup.service - backup my server
+			   Loaded: loaded (/etc/systemd/system/backup.service; disabled)
+			   Active: inactive (dead)
+
+			Aug 13 07:50:31 study.centos.vbird systemd[1]: Starting backup my server...
+			Aug 13 07:50:31 study.centos.vbird bash[20490]: job 8 at Thu Aug 13 07:50:00 2015
+			Aug 13 07:50:31 study.centos.vbird systemd[1]: Started backup my server.
+			# 为什么Active 是inactive 呢？这是因为我们的服务仅是一个简单的script 啊！
+			# 因此执行完毕就完毕了，不会继续存在记忆体中喔！
+
+			以后你都可以直接使用systemctl start backup.service 进行系统的备份了！而且会直接丢进atd 的管理中， 你就无须自己手动用at 去处理这项任务了
