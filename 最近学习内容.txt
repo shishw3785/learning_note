@@ -5801,3 +5801,162 @@ linux账号管理与ACL权限设置
 
 		centos 7.x 除了即有的rsyslog外,其实最上层还使用了systemd自己的日志文件管理功能,使用的是systmed-jourald这个用务,系统由systemd所管理,所有经由systemd启动的服务,如再启动或结束的过程中发生一些问题或是正常的信息,就会将该信息邮systemd-jourald.service以二进制的方式记录下来,之后再将这个信息发送给rsyslog.service
 		systemd-journald的记录主要都放置内存中,性能效好
+
+	日志文件内容的一般格式
+		事件发生的日期与时间
+		发生此事件的主机名
+			因为日志文件可以做成日志文件服务器,可以收集来自其他服务器的日志文件数据,用来区别信息来源主机
+		启动此事件的服务名称(如systemd,crond等),或命令与函数名称(如su,login)
+		该信息的实际内容
+
+	rsyslog.service 记录日志文件的服务
+		[root@study ~]# ps aux | grep rsyslog
+		USER PID %CPU %MEM VSZ RSS TTY STAT START TIME COMMAND
+		root 750 0.0 0.1 208012 4732 ? Ssl Aug17 0:00 /usr/sbin/rsyslogd -n 
+		#瞧！确实有启动的！daemon执行档名为rsyslogd喔！
+
+		[root@study ~]# systemctl status rsyslog.service
+		rsyslog.service - System Logging Service
+		   Loaded: loaded (/usr/lib/systemd/system/rsyslog.service; enabled )
+		   Active: active (running) since Mon 2015-08-17 18:37:58 CST; 2 days ago
+		 Main PID: 750 (rsyslogd)
+		   CGroup: /system.slice/rsyslog.service
+		           └─750 /usr/sbin/rsyslogd -n
+		# 也有启动这个服务，也有预设开机时也要启动这个服务！OK！正常没问题！！
+
+		rsyslog.service的配置文件/etc/rsyslog.conf
+			服务名称.[=!]信息等级       信息记录的档名或装置或主机
+			#底下以mail这个服务产生的info等级为例：
+			mail.info /var/log/maillog_info
+			# 这一行说明：mail 服务产生的大于等于info 等级的讯息，都记录到 
+			# /var/log/maillog_info 档案中的意思。
+
+			服务名称
+
+				相对序号	服务类别	说明
+				0	kern(kernel)	就是核心(kernel) 产生的讯息，大部分都是硬体侦测以及核心功能的启用
+				1	user	在使用者层级所产生的资讯，例如后续会介绍到的用户使用logger 指令来记录登录档的功能
+				2	mail	只要与邮件收发有关的讯息记录都属于这个；
+				3	daemon	主要是系统的服务所产生的资讯，例如systemd 就是这个有关的讯息！
+				4	auth	主要与认证/授权有关的机制，例如login, ssh, su 等需要帐号/密码的咚咚；
+				5	syslog	就是由syslog 相关协定产生的资讯，其实就是rsyslogd 这支程式本身产生的资讯啊！
+				6	lpr	亦即是列印相关的讯息啊！
+				7	news	与新闻群组伺服器有关的东西；
+				8	uucp	全名为Unix to Unix Copy Protocol，早期用于unix 系统间的程序资料交换；
+				9	cron	就是例行性工作排程cron/at 等产生讯息记录的地方；
+				10	authpriv	与auth 类似，但记录较多帐号私人的资讯，包括pam 模组的运作等！
+				11	ftp	与FTP 通讯协定有关的讯息输出！
+				16~23	local0 ~ local7	保留给本机用户使用的一些登录档讯息，较常与终端机互动。
+				上面谈到的都是Linux 核心的syslog 函数自行制订的服务名称，软体开发商可以透过呼叫上述的服务名称来记录他们的软体。举例来说， sendmail 与postfix 及dovecot 都是与邮件有关的软体，这些软体在设计登录档记录时，都会主动呼叫syslog 内的mail 服务名称(LOG_MAIL)。所以上述三个软体(sendmail, postfix, dovecot) 产生的讯息在syslog 看起来，就会『是mail 』类型的服务了
+
+			信息等级
+
+				等级数值	等级名称	说明
+				7	debug	用来debug (除错) 时产生的讯息资料；
+				6	info	仅是一些基本的讯息说明而已；
+				5	notice	虽然是正常资讯，但比info 还需要被注意到的一些资讯内容；
+				4	warning
+				(warn)	警示的讯息，可能有问题，但是还不至于影响到某个daemon 运作的资讯；基本上， info, notice, warn 这三个讯息都是在告知一些基本资讯而已，应该还不至于造成一些系统运作困扰；
+				3	err
+				(error)	一些重大的错误讯息，例如设定档的某些设定值造成该服务服法启动的资讯说明， 通常藉由err 的错误告知，应该可以了解到该服务无法启动的问题呢！
+				2	crit	比error 还要严重的错误资讯，这个crit 是临界点(critical) 的缩写，这个错误已经很严重了喔！
+				1	alert	警告警告，已经很有问题的等级，比crit 还要严重！
+				0	emerg
+				(panic)	疼痛等级，意指系统已经几乎要当机的状态！很严重的错误资讯了。通常大概只有硬体出问题，导致整个核心无法顺利运作，就会出现这样的等级的讯息吧！
+				基本上，在0(emerg)到6(info)的等级之间，等级数值越高代表越没事，等级靠近0则代表事情大条了！除了0到6之外还有两个比较特殊的等级，那就是debug(错误侦测等级)与none (不需登录等级)两个，当我们想要作一些错误侦测，或者是忽略掉某些服务的资讯时，就用这两个咚咚吧！
+
+				.[=!] 的连结符号喔！他代表的意思是这样的：
+
+					.：代表『比后面还要严重的等级(含该等级)都被记录下来』的意思，例如： mail.info代表只要是mail的资讯，而且该资讯等级严重于info (含info本身)时，就会被记录下来的意思。
+					.=：代表所需要的等级就是后面接的等级而已，其他的不要！
+					.!：有点反向选择的感觉，代表忽略大于等于这个等级的讯息！亦即是低于这个等级的才会被纪录的意思！
+					一般来说，我们比较常使用的是『.』这个连结符号啦！^_^
+
+			信息记录的文件名或设备名称
+				档案的绝对路径：通常就是放在/var/log 里头的档案啦！
+				印表机或其他：例如/dev/lp0 这个印表机装置
+				使用者名称：显示给使用者啰！
+				远端主机：例如@study.vbird.tsai 当然啦，要对方主机也能支援才行！
+				*：代表『目前在线上的所有人』，类似wall 这个指令的意义！
+
+
+
+		服务 daemon 名称
+			syslog	这个是Linux 核心所提供的登录档设计指引，所有的要求大概都写入道一个名为syslog.h 的标头档案中。如果你想要开发与登录档有关的软体， 那你就得要依循这个syslog 函数的要求去设计才行！可以使用man 3 syslog 去查询一下相关的资料！
+			rsyslogd	为了要达成实际上进行讯息的分类所开发的一套软体，所以，这就是最基本的daemon 服务
+			rsyslog.service	为了加入systemd 的控制，因此rsyslogd 的开发者设计的启动服务脚本配置文件
+
+
+		例题：
+		如果我要将我的mail 相关的资料给他写入/var/log/maillog 当中，那么在/etc/rsyslog.conf 的语法如何设计？
+		答：
+		基本的写法是这样的：
+		mail.info /var/log/maillog
+
+		例题：
+		我要将新闻群组资料(news) 及例行性工作排程(cron) 的讯息都写入到一个称为/var/log/cronnews 的档案中，但是这两个程序的警告讯息则额外的记录在/var/log/cronnews.warn 中， 那该如何设定我的rsyslog.conf 呢？
+		答：
+		很简单啦！既然是两个程序，那么只好以分号来隔开了，此外，由于第二个指定档案中，我只要记录警告讯息， 因此设定上需要指定『.=』这个符号，所以语法成为了：
+		news.*;cron.* /var/log/cronnews
+		news.=warn;cron.=warn /var/log/cronnews.warn
+
+		例题：
+		我的messages 这个档案需要记录所有的资讯，但是就是不想要记录cron, mail 及news 的资讯，那么应该怎么写才好？
+		答：
+		可以有两种写法，分别是：
+		*.*;news,cron,mail.none /var/log/messages
+		*.*;news.none;cron.none;mail.none /var/log/messages
+		使用『,』分隔时，那么等级只要接在最后一个即可，如果是以『;』来分的话， 那么就需要将服务与等级都写上去啰！这样会设定了吧！
+
+
+		centos 7 默认的rsysog.conf内容
+			[root@study ~]# vim /etc/rsyslog.conf 
+			1 #kern.* /dev/console
+			 2 *.info;mail.none;authpriv.none;cron.none /var /log/messages
+			 3 authpriv.* /var/log/secure
+			 4 mail.* -/var/log/maillog
+			 5 cron.* /var/log/cron
+			 6 *.emerg :omusrmsg:*
+			 7 uucp,news.crit / var/log/spooler
+			 8 local7.* /var/log/boot.log
+
+			上面总共仅有8 行设定值，每一行的意义是这样的：
+
+				#kern.*：只要是核心产生的讯息，全部都送到console(终端机)去。console通常是由外部装置连接到系统而来，举例来说，很多封闭型主机(没有键盘、萤幕的系统)可以透过连接RS232连接口将讯息传输到外部的系统中，例如以笔记型电脑连接到封闭主机的RS232插口。这个项目通常应该是用在系统出现严重问题而无法使用预设的萤幕观察系统时，可以透过这个项目来连接取得核心的讯息。( 注1 )
+
+				*.info;mail.none;authpriv.none;cron.none：由于mail, authpriv, cron 等类别产生的讯息较多， 且已经写入底下的数个档案中，因此在/var/log/messages 里面就不记录这些项目。除此之外的其他讯息都写入/var/log/messages 中。这也是为啥我们说这个messages 档案很重要的缘故！
+
+				authpriv.*：认证方面的讯息均写入/var/log/secure 档案；
+
+				mail.*：邮件方面的讯息则均写入/var/log/maillog 档案；
+
+				cron.*：例行性工作排程均写入/var/log/cron 档案；
+
+				*.emerg：当产生最严重的错误等级时，将该等级的讯息以wall 的方式广播给所有在系统登入的帐号得知， 要这么做的原因是希望在线的使用者能够赶紧通知系统管理员来处理这么可怕的错误问题。
+
+				uucp,news.crit：uucp 是早期Unix-like 系统进行资料传递的通讯协定，后来常用在新闻群组的用途中。news 则是新闻群组。当新闻群组方面的资讯有严重错误时就写入/var/log/spooler 档案中；
+
+				local7.*：将本机开机时应该显示到萤幕的讯息写入到/var/log/boot.log 档案中；
+				在上面的第四行关于mail的记录中，在记录的档案/var/log/maillog前面还有个减号『 - 』是干嘛用的？由于邮件所产生的讯息比较多，因此我们希望邮件产生的讯息先储存在速度较快的记忆体中(buffer) ，等到资料量够大了才一次性的将所有资料都填入磁碟内，这样将有助于登录档的存取性能。只不过由于讯息是暂存在记忆体内，因此若不正常关机导致登录资讯未回填到登录档中，可能会造成部分资料的遗失。
+
+		自行增加日志
+			让所有的信息都额外写入到/var/log/admin.log
+				# 1.先设定好所要建立的档案设置！
+				[root@study ~]# vim /etc/rsyslog.conf 
+				# Add by VBird 2015/08/19        <==再次强调，自己修改的时候加入一些说明 
+				*.info /var/log/admin.log   <==有用的是这行啦！
+
+				# 2.重新启动rsyslogd呢！
+				[root@study ~]# systemctl restart rsyslog.service 
+				[root@study ~]# ll /var/log/admin.log
+				-rw-r--r--. 1 root root 325 Aug 20 00:54 /var/log/admin.log
+				# 瞧吧！建立了这个登录档出现啰！
+
+				写进rsyslog.conf文件即可
+
+		日志文件安全性设置
+			一般默客入侵系统后,会清除相关日志来(清除证据),所以我们可以让日志只能增加不能修改与删除
+				chattr +a /var/log/admin.log
+				这样也可以避免被root不小心以vi方式打开修改日志文件,以vi修改日志文件后,rsyslog会误判文件被修改过就不写数据进去了
+
+			虽然chattr +a 可以加强保护,但是如果root账密被黑客登录,chattr也没用,因为root有所有权限,而且chattr +a 后，日志文件不能修改与删除,日志轮循时也将无法重命名,不过logrotate轮循可以配置实现相关
