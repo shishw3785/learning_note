@@ -5960,3 +5960,118 @@ linux账号管理与ACL权限设置
 				这样也可以避免被root不小心以vi方式打开修改日志文件,以vi修改日志文件后,rsyslog会误判文件被修改过就不写数据进去了
 
 			虽然chattr +a 可以加强保护,但是如果root账密被黑客登录,chattr也没用,因为root有所有权限,而且chattr +a 后，日志文件不能修改与删除,日志轮循时也将无法重命名,不过logrotate轮循可以配置实现相关
+
+
+		日志文件服务器的设置
+			如有十台提供服务的Linux主机,可以拿一台作为日志文件服务器的server来接收其它主机的日志,这样就不用一台一台去查看日志了
+
+
+			# 1. Server端：修改rsyslogd的启动设定档，在/etc/rsyslog.conf内！
+			[root@study ~]# vim /etc/rsyslog.conf 
+			#找到底下这几行：
+			# Provides UDP syslog reception
+			#$ModLoad imudp
+			#$UDPServerRun 514
+
+			# Provides TCP syslog reception
+			#$ModLoad imtcp
+			#$InputTCPServerRun 514
+			# 上面的是UDP 埠口，底下的是TCP 埠口！如果你的网路状态很稳定，就用UDP 即可。
+			#不过，如果你想要让资料比较稳定传输，那么建议使用TCP啰！所以修改底下两行即可！
+			$ModLoad imtcp
+			$InputTCPServerRun 514 
+
+			# 2.重新启动与观察rsyslogd喔！
+			[root@study ~]# systemctl restart rsyslog.service 
+			[root@study ~]# netstat -ltnp | grep syslog
+			Proto Recv-Q Send-Q Local Address Foreign Address State PID/Program name
+			tcp 0 0 0.0.0.0: 514     0.0.0.0:* LISTEN 2145/rsyslogd
+			tcp6 0 0 :::514 :::* LISTEN 2145/rsyslogd
+			# 嘿嘿！你的登录档主机已经设定妥当啰！很简单吧！
+
+
+			假设server IP 为192.168.1.100
+
+			Client 设置
+			[root@study ~]# vim /etc/rsyslog.conf 
+			*.* @@192.168.1.100 
+			#*.* @192.168.1.100   #若用UDP传输，设定要变这样！
+
+			[root@study ~]# systemctl restart rsyslog.service
+
+		日志文件的轮询(logrotate)
+
+			配置文件
+				/etc/logrotate.conf
+				/etc/logrotate.d/
+
+
+			[root@study ~]# vim /etc/logrotate.conf 
+			#底下的设定是"logrotate的预设设定值" ，如果个别的档案设定了其他的参数，
+			# 则将以个别的档案设定为主，若该档案没有设定到的参数则以这个档案的内容为预设值！
+
+			weekly     <==预设每个礼拜对登录档进行一次rotate的工作 
+			rotate 4   <==保留几个登录档呢？预设是保留四个！
+			create     <==由于登录档被更名，因此建立一个新的来继续储存之意！
+			dateext    <==就是这个设定值！可以让被轮替的档案名称加上日期作为档名喔！
+			#compress <==被更动的登录档是否需要压缩？如果登录档太大则可考虑此参数启动
+
+			include /etc/logrotate.d
+			# 将/etc/logrotate.d/ 这个目录中的所有档案都读进来执行rotate 的工作！
+
+			/var/log/wtmp {        <==仅针对/var/log/wtmp所设定的参数 
+			    monthly            <==每个月一次，取代每周！
+			    create 0664 root utmp <==指定新建档案的权限与所属帐号/群组 
+			    minsize 1M         <==档案容量一定要超过1M后才进行rotate (略过时间参数) 
+			    rotate 1           <==仅保留一个，亦即仅有wtmp.1保留而已。
+			} 
+			#这个wtmp可记录登入者与系统重新开机时的时间与来源主机及登入期间的时间。
+			# 由于具有minsize 的参数，因此不见得每个月一定会进行一次喔！要看档案容量。
+			# 由于仅保留一个登录档而已，不满意的话可以将他改成rotate 5 吧！
+
+
+
+			[root@study ~]# vim /etc/logrotate.d/syslog
+			/var/log/cron
+			/var/log/maillog
+			/var/log/messages
+			/var/log/secure
+			/var/log/spooler
+			{
+			    sharedscripts 
+			    postrotate
+			        /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true
+			    endscript
+			}
+
+			档名：被处理的登录档绝对路径档名写在前面，可以使用空白字元分隔多个登录档；
+			参数：上述档名进行轮替的参数使用{ }包括起来；
+			执行脚本：可呼叫外部指令来进行额外的命令下达，这个设定需与sharedscripts .... endscript设定合用才行。至于可用的环境为：
+			prerotate：在启动logrotate之前进行的指令，例如修改登录档的属性等动作；
+			postrotate：在做完logrotate之后启动的指令，例如重新启动(kill -HUP)某个服务！
+			Prerotate 与postrotate 对于已加上特殊属性的档案处理上面，是相当重要的执行程序！
+			那么/etc/logrotate.d/syslog 内设定的5 个档案的轮替功能就变成了：
+
+			该设定只对/var/log/ 内的cron, maillog, messages, secure, spooler 有效；
+			登录档轮替每周一次、保留四个、且轮替下来的登录档不进行压缩(未更改预设值)；
+			轮替完毕后(postrotate) 取得syslog 的PID 后，以kill -HUP 重新启动syslogd
+			假设我们有针对/var/log/messages 这个档案增加chattr +a 的属性时， 依据logrotate 的工作原理，我们知道，这个/var/log/messages 将会被更名成为/var/log/messages.1 才是。但是由于加上这个+a 的参数啊，所以更名是不可能成功的！那怎么办呢？呵呵！就利用prerotate 与postrotate 来进行登录档轮替前、后所需要作的动作啊！果真如此时，那么你可以这样修改一下这个档案喔！
+
+			[root@study ~]# vim /etc/logrotate.d/syslog
+			/var/log/cron
+			/var/log/maillog
+			/var/log/messages
+			/var/log/secure
+			/var/log/spooler
+			{
+			    sharedscripts
+			    prerotate
+			       /usr/bin/chattr -a /var/log/messages
+			    endscript
+			    sharedscripts
+			    postrotate
+			        /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true
+			        /usr/bin/chattr +a /var/log/messages
+			    endscript
+			}
+			看到否？就是先给他去掉a这个属性，让登录档/var/log/messages可以进行轮替的动作，然后执行了轮替之后，再给他加入这个属性！请特别留意的是，那个/bin/kill -HUP ...的意义，这一行的目的在于将系统的rsyslogd重新以其参数档(rsyslog.conf)的资料读入一次！也可以想成是reload的意思啦
