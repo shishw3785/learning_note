@@ -6075,3 +6075,132 @@ linux账号管理与ACL权限设置
 			    endscript
 			}
 			看到否？就是先给他去掉a这个属性，让登录档/var/log/messages可以进行轮替的动作，然后执行了轮替之后，再给他加入这个属性！请特别留意的是，那个/bin/kill -HUP ...的意义，这一行的目的在于将系统的rsyslogd重新以其参数档(rsyslog.conf)的资料读入一次！也可以想成是reload的意思啦
+
+		实际测试logrotate的操作
+
+			[root@study ~]# logrotate [-vf] logfile 
+			选项与参数：
+			-v ：启动显示模式，会显示logrotate 运作的过程喔！
+			-f ：不论是否符合设定档的资料，强制每个登录档都进行rotate 的动作！
+
+			范例一：执行一次logrotate看看整个流程为何？
+			[root@study ~]# logrotate -v /etc/logrotate.conf 
+			reading config file /etc/logrotate.conf <==读取主要设定档 
+			including /etc/logrotate.d               <==呼叫外部的设定 
+			reading config file chrony               <==就是外部设定啊！
+			....(中间省略).... 
+			Handling 18 logs                         <==共有18个登录档被记录
+			....(中间省略)....
+			rotating pattern: /var/log/cron
+			/var/log/maillog
+			/var/log/messages
+			/var/log/secure
+			/var/log/spooler
+			 weekly (52 rotations)
+			empty log files are not rotated, old logs are removed
+			considering log /var/log/cron
+			  log does not need rotating
+			considering log /var/log/maillog
+			  log does not need rotating
+			considering log /var/log/messages        <==开始处理messages 
+			  log does not need rotating             <==因为时间未到，不需要更动！
+			....(底下省略)....
+
+			范例二：强制进行logrotate的动作 
+			[root@study ~]# logrotate -vf /etc/logrotate.conf 
+			....(前面省略)....
+			rotating log /var/log/messages, log->rotateCount is 52
+			dateext suffix '-20150820'
+			glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+			compressing log with: /bin/gzip
+			....(底下省略).... 
+			#看到否？整个rotate的动作就是这样一步一步进行的～
+
+			[root@study ~]# ll /var/log/messages*; lsattr /var/log/messages
+			-rw-------. 1 root root 143 Aug 20 01:45 /var/log/messages
+			-rw-------. 1 root root 167125 Aug 20 01:40 /var/log/messages-20150820
+			-----a---------- /var/log/messages   <==主动加入a的隐藏属性啰！
+
+		自定义日志文件的轮循功能
+			假设你已经建立了/var/log/admin.log 这个档案， 现在，你想要将该档案加上+a 这个隐藏标签，而且设定底下的相关资讯：
+
+			登录档轮替一个月进行一次；
+			该登录档若大于10MB 时，则主动进行轮替，不需要考虑一个月的期限；
+			保存五个备份档案；
+			备份档案需要压缩
+
+			# 1.先建立+a这个属性啊！
+			[root@study ~]# chattr +a /var/log/admin.log 
+			[root@study ~]# lsattr /var/log/admin.log
+			-----a---------- /var/log/admin.log
+			[root@study ~]# mv /var/log/admin.log /var/log/admin.log.1
+			mv: cannot move `/var/log/admin.log' to `/var/log/admin.log.1': Operation not permitted
+			# 这里确定了加入a 的隐藏属性！所以root 无法移动此登录档！
+
+			# 2.开始建立logrotate的设定档，增加一个档案在/etc/logrotate.d内就对了！
+			[root@study ~]# vim /etc/logrotate.d/admin 
+			# This configuration is from VBird 2015/08/19
+			/var/log/admin.log {
+			        monthly    <==每个月进行一次 
+			        size=10M   <==档案容量大于10M则开始处置 
+			        rotate 5   <==保留五个！
+			        compress   <==进行压缩工作！
+			        sharedscripts
+			        prerotate
+			                /usr/bin/chattr -a /var/log/admin.log
+			        endscript
+			        sharedscripts
+			        postrotate
+			                /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true
+			                /usr/bin/chattr +a /var/log/admin.log
+			        endscript
+			}
+
+			# 3.测试一下logrotate相关功能的资讯显示： 
+			[root@study ~]# logrotate -v /etc/logrotate.conf 
+			....(前面省略)....
+			rotating pattern: /var/log/admin.log 10485760 bytes (5 rotations)
+			empty log files are rotated, old logs are removed
+			considering log /var/log/admin.log
+			  log does not need rotating
+			not running prerotate script, since no logs will be rotated
+			not running postrotate script, since no logs were rotated
+			....(底下省略)....
+			# 因为还不足一个月，档案也没有大于10M，所以不需进行轮替！
+
+			# 4.测试一下强制logrotate与相关功能的资讯显示： 
+			[root@study ~]# logrotate -vf /etc/logrotate.d/admin 
+			reading config file /etc/logrotate.d/admin
+			reading config file /etc/logrotate.d/admin
+
+			Handling 1 logs
+
+			rotating pattern: /var/log/admin.log forced from command line (5 rotations)
+			empty log files are rotated, old logs are removed
+			considering log /var/log/admin.log
+			  log needs rotating
+			rotating log /var/log/admin.log, log->rotateCount is 5
+			dateext suffix '-20150820'
+			glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+			renaming /var/log/admin.log.5.gz to /var/log/admin.log.6.gz (rotatecount 5, logstart 1, i 5),
+			old log /var/log/admin.log.5.gz does not exist
+			renaming /var/log/admin.log.4.gz to /var/log/admin.log.5.gz (rotatecount 5, logstart 1, i 4),
+			old log /var/log/admin.log.4.gz does not exist
+			renaming /var/log/admin.log.3.gz to /var/log/admin.log.4.gz (rotatecount 5, logstart 1, i 3),
+			old log /var/log/admin.log.3.gz does not exist
+			renaming /var/log/admin.log.2.gz to /var/log/admin.log.3.gz (rotatecount 5, logstart 1, i 2),
+			old log /var/log/admin.log.2.gz does not exist
+			renaming /var/log/admin.log.1.gz to /var/log/admin.log.2.gz (rotatecount 5, logstart 1, i 1),
+			old log /var/log/admin.log.1.gz does not exist
+			renaming /var/log/admin.log.0.gz to /var/log/admin.log.1.gz (rotatecount 5, logstart 1, i 0),
+			old log /var/log/admin.log.0.gz does not exist
+			log /var/log/admin.log.6.gz doesn't exist -- won't try to dispose of it
+			running prerotate script
+			fscreate context set to system_u:object_r:var_log_t:s0
+			renaming /var/log/admin.log to /var/log/admin.log.1
+			running postrotate script
+			compressing log with: /bin/gzip
+
+			[root@study ~]# lsattr /var/log/admin.log*
+			-----a---------- /var/log/admin.log
+			---------------- /var/log/admin.log.1.gz   <==有压缩过喔！
