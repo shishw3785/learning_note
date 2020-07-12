@@ -6204,3 +6204,60 @@ linux账号管理与ACL权限设置
 			[root@study ~]# lsattr /var/log/admin.log*
 			-----a---------- /var/log/admin.log
 			---------------- /var/log/admin.log.1.gz   <==有压缩过喔！
+
+
+		systemd-journald.service简介
+			过于由于rsyslogd必须要启动完成后日志文件才开始记录,所以内核还得要自己产生一个klogd的服务才能将系统在启动过程中的信息记录下来,然后等rsyslog启动后才传送给它处理
+			现在有了systemd之后,由于它是内核呼醒,然后又是第一执行任务,它可以主动调用systmed-journald来协助记录文件,记录开机启动过程中的所有信息与服务启动信息
+
+			由于systemd是使用内存的日志记录方式,因此重新启动过后,开机启动前的日志文件信息就不会记录了,所以还是建议启动rsyslogd来协助记录,也就是说systemd-journald用来管理与查询这次启动后的登录信息,rsyslogd可以用来记录以前及现在的所有数据到磁盘文件中,方便未来查询
+
+			journaldctl 查看日志信息,详细查鸟哥Linux
+
+			logger 将一些数据存储到日志中的命令,如可以在脚本中设置开始与结束时间,详细查鸟哥
+
+			journal也可以保存在磁盘中,直接在/var/log新建joural文件即可,这样一来,/run/log就不会存储了,(run内存的数据存放位置),不建议保存,因为有rsyslog了
+
+		logwatch
+			日志分析工具,可以整体查看系统日志,也可以自己定制
+
+
+
+启动流程,模块管理与Loader
+	操作系统启动流程
+		加载BIOS的硬件信息与进行自我检测,并根据设置取得第一个可启动的设备
+		读取并执行第一个启动设备内MBR内的启动引导程序(即grub2,spfdisk等程序)
+		根据启动引导程序的设置加载Kerner(加载到内存当中解压缩与执行),Kerner会开始检测硬件与加载驱动程序
+		在硬件驱动成功后,Kerner会主动调用systemd程序,并以default.target流程启动
+			systemd执行sysinit.target初始化系统及basic.target准备操作系统
+			systmed启动multi-user.target下的本机与服务器服务
+			systemd执行multi-user.target下的/etc/rc.d/rc.local文件
+			systemd执行multi-user.target下的getty.target及登录服务
+			systemd执行graphical需要的服务
+
+	BIOS,启动自我测试与MBR/GPT
+		启动整个系经首先就得要让系统去加载BIOS,并通过BIOS加载CMOS的信息,并由CMOS内的设置值取得主机的各项硬件配置(如CPU与接口设备的沟通频率,启动设备的查找顺序,硬盘的大小与类型等),然后BIOS还会进行自我检测,然后开始执行硬件检测的初始化,之后再定义可启动的设备顺序,接下来就会开始进行启动设备的数据读取了
+		BIOS会指定启动设备的好让可以读取磁盘中的操作系统内核文件,由于不同操作系统它的文件系统不相同,因此必须要以一个启动引导程序来处理内核文件的加载(load)的问题,这个启动引导程序就被称为(boot loader),boot loader安将在启动设备的第一个扇区(sector)中,也就是MBR
+
+	boot loader(启动引导程序)
+		loader最主要的功能就是识别操作系统的文件格式并据以加载内核到内存中执行,由于不同操作系统文件格式不一样,因此每种操作系统都有自己的boot loader
+
+		多重引导
+			每个文件系统都会保留一块启动扇区(boot sector)提供操作系统安装boot loader,默认安装
+
+			先看boot loader主要功能
+				提供选项 用户可以选择不同的启动选项,这也是多重引导的重要功能
+				加载内核文件 直接指向可启动的程序区域名来启动操作系统
+				转交给其他loader 将启动管理功能转交给其他loader负责
+
+			linux安装系统时可以选择将boot loader安装到MBR,如果选择则MBR与boot sector都会保留一份boot loader
+			windows安装时,默认会主动地将MBR与boot sector都装上一份boot loader
+
+			因为boot loader具有控制权转交功能,但windows的boot loader不具有控制权转交功能,因此不能使用windows的Loader来加载linux的loader,所以会强调先安装windows再装linux
+
+			所以多系统安装引导是会是这样子
+				選單一：MBR(grub2) --> kernel file --> booting
+				選單二：MBR(grub2) --> boot sector(Windows loader) --> Windows kernel --> booting
+				選單三：MBR(grub2) --> boot sector(grub2) --> kernel file --> booting
+
+				MBR使用linux的grub2引导程序,里面有3个选项，1选项是可以直接指向linux内核文件并加载核来启动, 2选项将启动管理权交给windows管理,windows loader会接管启动流程,它就能记动windows了, 3选项则是使用Linux在boot sectoer内的启动引导程序,此时就会跳出另一个grub2选项
