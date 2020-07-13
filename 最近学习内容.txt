@@ -6235,172 +6235,234 @@ linux账号管理与ACL权限设置
 			systemd执行multi-user.target下的getty.target及登录服务
 			systemd执行graphical需要的服务
 
-	BIOS,启动自我测试与MBR/GPT
-		启动整个系经首先就得要让系统去加载BIOS,并通过BIOS加载CMOS的信息,并由CMOS内的设置值取得主机的各项硬件配置(如CPU与接口设备的沟通频率,启动设备的查找顺序,硬盘的大小与类型等),然后BIOS还会进行自我检测,然后开始执行硬件检测的初始化,之后再定义可启动的设备顺序,接下来就会开始进行启动设备的数据读取了
-		BIOS会指定启动设备的好让可以读取磁盘中的操作系统内核文件,由于不同操作系统它的文件系统不相同,因此必须要以一个启动引导程序来处理内核文件的加载(load)的问题,这个启动引导程序就被称为(boot loader),boot loader安将在启动设备的第一个扇区(sector)中,也就是MBR
+		BIOS,启动自我测试与MBR/GPT
+			启动整个系经首先就得要让系统去加载BIOS,并通过BIOS加载CMOS的信息,并由CMOS内的设置值取得主机的各项硬件配置(如CPU与接口设备的沟通频率,启动设备的查找顺序,硬盘的大小与类型等),然后BIOS还会进行自我检测,然后开始执行硬件检测的初始化,之后再定义可启动的设备顺序,接下来就会开始进行启动设备的数据读取了
+			BIOS会指定启动设备的好让可以读取磁盘中的操作系统内核文件,由于不同操作系统它的文件系统不相同,因此必须要以一个启动引导程序来处理内核文件的加载(load)的问题,这个启动引导程序就被称为(boot loader),boot loader安将在启动设备的第一个扇区(sector)中,也就是MBR
 
-	boot loader(启动引导程序)
-		loader最主要的功能就是识别操作系统的文件格式并据以加载内核到内存中执行,由于不同操作系统文件格式不一样,因此每种操作系统都有自己的boot loader
+		boot loader(启动引导程序)
+			loader最主要的功能就是识别操作系统的文件格式并据以加载内核到内存中执行,由于不同操作系统文件格式不一样,因此每种操作系统都有自己的boot loader
 
-		多重引导
-			每个文件系统都会保留一块启动扇区(boot sector)提供操作系统安装boot loader,默认安装
+			多重引导
+				每个文件系统都会保留一块启动扇区(boot sector)提供操作系统安装boot loader,默认安装
 
-			先看boot loader主要功能
-				提供选项 用户可以选择不同的启动选项,这也是多重引导的重要功能
-				加载内核文件 直接指向可启动的程序区域名来启动操作系统
-				转交给其他loader 将启动管理功能转交给其他loader负责
+				先看boot loader主要功能
+					提供选项 用户可以选择不同的启动选项,这也是多重引导的重要功能
+					加载内核文件 直接指向可启动的程序区域名来启动操作系统
+					转交给其他loader 将启动管理功能转交给其他loader负责
 
-			linux安装系统时可以选择将boot loader安装到MBR,如果选择则MBR与boot sector都会保留一份boot loader
-			windows安装时,默认会主动地将MBR与boot sector都装上一份boot loader
+				linux安装系统时可以选择将boot loader安装到MBR,如果选择则MBR与boot sector都会保留一份boot loader
+				windows安装时,默认会主动地将MBR与boot sector都装上一份boot loader
 
-			因为boot loader具有控制权转交功能,但windows的boot loader不具有控制权转交功能,因此不能使用windows的Loader来加载linux的loader,所以会强调先安装windows再装linux
+				因为boot loader具有控制权转交功能,但windows的boot loader不具有控制权转交功能,因此不能使用windows的Loader来加载linux的loader,所以会强调先安装windows再装linux
 
-			所以多系统安装引导是会是这样子
-				選單一：MBR(grub2) --> kernel file --> booting
-				選單二：MBR(grub2) --> boot sector(Windows loader) --> Windows kernel --> booting
-				選單三：MBR(grub2) --> boot sector(grub2) --> kernel file --> booting
+				所以多系统安装引导是会是这样子
+					選單一：MBR(grub2) --> kernel file --> booting
+					選單二：MBR(grub2) --> boot sector(Windows loader) --> Windows kernel --> booting
+					選單三：MBR(grub2) --> boot sector(grub2) --> kernel file --> booting
 
-				MBR使用linux的grub2引导程序,里面有3个选项，1选项是可以直接指向linux内核文件并加载核来启动, 2选项将启动管理权交给windows管理,windows loader会接管启动流程,它就能记动windows了, 3选项则是使用Linux在boot sectoer内的启动引导程序,此时就会跳出另一个grub2选项
+					MBR使用linux的grub2引导程序,里面有3个选项，1选项是可以直接指向linux内核文件并加载核来启动, 2选项将启动管理权交给windows管理,windows loader会接管启动流程,它就能记动windows了, 3选项则是使用Linux在boot sectoer内的启动引导程序,此时就会跳出另一个grub2选项
 
-	加载内核检测硬件与initramfs的功能
-		当由boot loader的管理而开始读取内核文件后,接下来Linux会将内核文件解压缩到内存,并利用内核的功能,开始测试与驱动各周边设备(存付,网卡CPU等),此时Linux内核会以自己的功能重新检测一次硬件,而不一定会使用BIOS检测到的硬件信息,就是说内核此时才开始接管BIOS后的工作
+		加载内核检测硬件与initramfs的功能
+			当由boot loader的管理而开始读取内核文件后,接下来Linux会将内核文件解压缩到内存,并利用内核的功能,开始测试与驱动各周边设备(存付,网卡CPU等),此时Linux内核会以自己的功能重新检测一次硬件,而不一定会使用BIOS检测到的硬件信息,就是说内核此时才开始接管BIOS后的工作
 
-		内核文件位置
-			/boot 名为vmlinuz
+			内核文件位置
+				/boot 名为vmlinuz
 
-		linux内核可以通过动态加载内核模块(类似驱动程序),内核模块位置/lib/modules目录中
+			linux内核可以通过动态加载内核模块(类似驱动程序),内核模块位置/lib/modules目录中
 
-		由于模块放置在磁盘根目录(/lib必须与/在同一分区),因此启动过程中内核必须挂载根目录,这样才能读取内核模块提供的加载驱动程序功能,根目录此时挂载为只读
+			由于模块放置在磁盘根目录(/lib必须与/在同一分区),因此启动过程中内核必须挂载根目录,这样才能读取内核模块提供的加载驱动程序功能,根目录此时挂载为只读
 
-		linux会将非必要的功能且可编译为模块的内核功能,编译成模块,如USB,SATA,SCSI等磁盘设备的驱动程序都是以模块存在,假设linux安装在SATA磁盘,可以通过BIOS的INT 13取得boot loader与内核文件启动,然后内核会开始接管系统并检测硬件及尝试挂载根目录来以得额外的驱动程序,问题是内核根本不认识SATA磁盘,所以需要加载SATA驱动程序否则无法挂载根目录,但SATA的驱动程序在/lib/modules内,这个问题需要虚拟文件系统来处理
+			linux会将非必要的功能且可编译为模块的内核功能,编译成模块,如USB,SATA,SCSI等磁盘设备的驱动程序都是以模块存在,假设linux安装在SATA磁盘,可以通过BIOS的INT 13取得boot loader与内核文件启动,然后内核会开始接管系统并检测硬件及尝试挂载根目录来以得额外的驱动程序,问题是内核根本不认识SATA磁盘,所以需要加载SATA驱动程序否则无法挂载根目录,但SATA的驱动程序在/lib/modules内,这个问题需要虚拟文件系统来处理
 
-		虚拟文件系统
-			一般使用的文件名为/boot/initrd或/boot/initramfs，这文件也能通过被boot loader解压缩加载到内存且在内存中模拟一个根目录,且提供一个程序来加载启动过程中需要的内核模块(通常是USB,RAID,SATA等与文件系统与磁盘接口的驱动程序),加载后会帮助内核重新(并挂载实际的根目录)调用systemd开始后续的正常动流程
+			虚拟文件系统
+				一般使用的文件名为/boot/initrd或/boot/initramfs，这文件也能通过被boot loader解压缩加载到内存且在内存中模拟一个根目录,且提供一个程序来加载启动过程中需要的内核模块(通常是USB,RAID,SATA等与文件系统与磁盘接口的驱动程序),加载后会帮助内核重新(并挂载实际的根目录)调用systemd开始后续的正常动流程
 
-			其它的虚拟文件详细信息参考鸟哥
+				其它的虚拟文件详细信息参考鸟哥
 
 
-	第一个程序systemd及使用default.target进入启动程序分析
-		内核完整地加载后,主机就应该开始正确运行了,接下来就到系统的第一个程序执行了,systemd
+		第一个程序systemd及使用default.target进入启动程序分析
+			内核完整地加载后,主机就应该开始正确运行了,接下来就到系统的第一个程序执行了,systemd
 
-		systemd最主要的功能就是准备软件的执行环境,包括系统的主机名,网络设置,语文设置等,所有的操作都通过systemd的默认启动服务的集合即/etc/systemd/system/default.target来规划
+			systemd最主要的功能就是准备软件的执行环境,包括系统的主机名,网络设置,语文设置等,所有的操作都通过systemd的默认启动服务的集合即/etc/systemd/system/default.target来规划
 
-		systemd的处理流程
-			取得default.target后,它会链接到/usr/lib/systemd/system下去取得multi-user/target或graphical.target其中的一个,假设使用的是graphical.target,接下来systemd会去找两个地方的设置
-				/etc/systemd/system/graphical.target.wants/ 用户设置加载的unit
-				/usr/lib/systemd/system/graphical.target.wants/ 系统默认加载的Unit
-			然后再由/usr/lib/systemd/system/graphical.target配置发现
-				[root@study ~]# cat /usr/lib/systemd/system/graphical.target
+			systemd的处理流程
+				取得default.target后,它会链接到/usr/lib/systemd/system下去取得multi-user/target或graphical.target其中的一个,假设使用的是graphical.target,接下来systemd会去找两个地方的设置
+					/etc/systemd/system/graphical.target.wants/ 用户设置加载的unit
+					/usr/lib/systemd/system/graphical.target.wants/ 系统默认加载的Unit
+				然后再由/usr/lib/systemd/system/graphical.target配置发现
+					[root@study ~]# cat /usr/lib/systemd/system/graphical.target
+					[Unit]
+					Description=Graphical Interface
+					Documentation=man:systemd.special(7)
+					Requires=multi-user.target
+					After=multi-user.target
+					Conflicts=rescue.target
+					Wants=display-manager.service
+					AllowIsolate=yes
+
+					[Install]
+					Alias=default.target
+				这表示graphical.target 必须要完成multi-user.target 之后才能够进行，而进行完graphical.target 之后，还得要启动display-manager.service 才行的意思 
+				然后
+
+				[root@study ~]# cat /usr/lib/systemd/system/multi-user.target
 				[Unit]
-				Description=Graphical Interface
+				Description=Multi-User System
 				Documentation=man:systemd.special(7)
-				Requires=multi-user.target
-				After=multi-user.target
-				Conflicts=rescue.target
-				Wants=display-manager.service
+				Requires=basic.target
+				Conflicts=rescue.service rescue.target
+				After=basic.target rescue.service rescue.target
 				AllowIsolate=yes
 
 				[Install]
 				Alias=default.target
-			这表示graphical.target 必须要完成multi-user.target 之后才能够进行，而进行完graphical.target 之后，还得要启动display-manager.service 才行的意思 
-			然后
 
-			[root@study ~]# cat /usr/lib/systemd/system/multi-user.target
-			[Unit]
-			Description=Multi-User System
-			Documentation=man:systemd.special(7)
-			Requires=basic.target
-			Conflicts=rescue.service rescue.target
-			After=basic.target rescue.service rescue.target
-			AllowIsolate=yes
+				#然后看看系统预设要载入的unit有哪些？
+				[root@study ~]# ls /usr/lib/systemd/system/multi-user.target.wants
+				brandbot.path plymouth-quit.service systemd-logind.service
+				dbus.service plymouth-quit-wait.service systemd-user-sessions.service
+				getty.target systemd-ask-password-wall.path
 
-			[Install]
-			Alias=default.target
+				#使用者自订要载入的unit又有哪些呢？
+				[root@study ~]# ls /etc/systemd/system/multi-user.target.wants
+				abrt-ccpp.service crond.service mdmonitor.service sshd.service
+				abrtd.service hypervkvpd.service ModemManager.service sysstat.service
+				abrt-oops.service hypervvssd.service NetworkManager.service tuned.service
+				.....
+				然后又知道multi-usre.target需要在basic.target运行完毕才能加载上述的许多unit,这大概就是systemd的启动流程
 
-			#然后看看系统预设要载入的unit有哪些？
-			[root@study ~]# ls /usr/lib/systemd/system/multi-user.target.wants
-			brandbot.path plymouth-quit.service systemd-logind.service
-			dbus.service plymouth-quit-wait.service systemd-user-sessions.service
-			getty.target systemd-ask-password-wall.path
+			基本上我们CentOS 7.x 的systemd 开机流程大约是这样：
 
-			#使用者自订要载入的unit又有哪些呢？
-			[root@study ~]# ls /etc/systemd/system/multi-user.target.wants
-			abrt-ccpp.service crond.service mdmonitor.service sshd.service
-			abrtd.service hypervkvpd.service ModemManager.service sysstat.service
-			abrt-oops.service hypervvssd.service NetworkManager.service tuned.service
-			.....
-			然后又知道multi-usre.target需要在basic.target运行完毕才能加载上述的许多unit,这大概就是systemd的启动流程
-
-		基本上我们CentOS 7.x 的systemd 开机流程大约是这样：
-
-			local-fs.target + swap.target：这两个target 主要在挂载本机/etc/fstab 里面所规范的文件系统与相关的内存交换分区。
-			sysinit.target：这个target 主要在检测硬体，加载所需要的内核模块等动作。
-			basic.target：载入主要的周边硬件驱动程式与防火墙相关任务
-			multi-user.target 底下的其它一般系统或网路服务的载入
-			图形界面相关服务如gdm.service 等其他服务的载入
-			除了第一步骤local-fs.target, swap.target 是透过/etc/fstab 来进行挂载的行为之外，那其他的target 有做啥动作呢？简单得来说说！
+				local-fs.target + swap.target：这两个target 主要在挂载本机/etc/fstab 里面所规范的文件系统与相关的内存交换分区。
+				sysinit.target：这个target 主要在检测硬体，加载所需要的内核模块等动作。
+				basic.target：载入主要的周边硬件驱动程式与防火墙相关任务
+				multi-user.target 底下的其它一般系统或网路服务的载入
+				图形界面相关服务如gdm.service 等其他服务的载入
+				除了第一步骤local-fs.target, swap.target 是透过/etc/fstab 来进行挂载的行为之外，那其他的target 有做啥动作呢？简单得来说说！
 
 
-	systemd执行sysinit.target初始化系统, basick准备系统
-		sysinit.target
-			基本的内核功能,文件系统设置的驱动等在这阶段,了解即行
-				特殊档案系统装置的挂载：包括dev-hugepages.mount dev-mqueue.mount 等挂载服务，主要在挂载跟巨量记忆体分页使用与讯息伫列的功能。挂载成功后，会在/dev 底下建立/dev/hugepages/, /dev/mqueue/ 等目录；
-				特殊档案系统的启用：包括磁碟阵列、网路磁碟(iscsi)、LVM 档案系统、档案系统对照服务(multipath) 等等，也会在这里被侦测与使用到！
-				开机过程的讯息传递与动画执行：使用plymouthd 服务搭配plymouth 指令来传递动画与讯息
-				日志式登录档的使用：就是systemd-journald 这个服务的启用啊！
-				载入额外的核心模组：透过/etc/modules-load.d/*.conf 档案的设定，让核心额外载入管理员所需要的核心模组！
-				载入额外的核心参数设定：包括/etc/sysctl.conf 以及/etc/sysctl.d/*.conf 内部设定！
-				启动系统的乱数产生器：乱数产生器可以帮助系统进行一些密码加密演算的功能
-				设定终端机(console) 字形
-				启动动态装置管理员：就是udevd 这个家伙！用在动态对应实际装置存取与装置档名对应的一个服务！相当重要喔！也是在这里启动的！
-		sysinit.target执行之后就到basic.target
-		basic.target    了解即行
-			载入alsa 音效驱动程式：这个alsa 是个音效相关的驱动程式，会让你的系统有音效产生啰；
-			载入firewalld 防火墙：CentOS 7.x 以后使用firewalld 取代iptables 的防火墙设定，虽然最终都是使用iptables 的架构， 不过在设定上面差很多喔！
-			载入CPU 的微指令功能；
-			启动与设定SELinux 的安全本文：如果由disable 的状态改成enable 的状态，或者是管理员设定强制重新设定一次SELinux 的安全本文， 也在这个阶段处理喔！
-			将目前的开机过程所产生的开机资讯写入到/var/log/dmesg 当中
-			由/etc/sysconfig/modules/*.modules 及/etc/rc.modules 载入管理员指定的模组！
-			载入systemd 支援的timer 功能；
+		systemd执行sysinit.target初始化系统, basick准备系统
+			sysinit.target
+				基本的内核功能,文件系统设置的驱动等在这阶段,了解即行
+					特殊档案系统装置的挂载：包括dev-hugepages.mount dev-mqueue.mount 等挂载服务，主要在挂载跟巨量记忆体分页使用与讯息伫列的功能。挂载成功后，会在/dev 底下建立/dev/hugepages/, /dev/mqueue/ 等目录；
+					特殊档案系统的启用：包括磁碟阵列、网路磁碟(iscsi)、LVM 档案系统、档案系统对照服务(multipath) 等等，也会在这里被侦测与使用到！
+					开机过程的讯息传递与动画执行：使用plymouthd 服务搭配plymouth 指令来传递动画与讯息
+					日志式登录档的使用：就是systemd-journald 这个服务的启用啊！
+					载入额外的核心模组：透过/etc/modules-load.d/*.conf 档案的设定，让核心额外载入管理员所需要的核心模组！
+					载入额外的核心参数设定：包括/etc/sysctl.conf 以及/etc/sysctl.d/*.conf 内部设定！
+					启动系统的乱数产生器：乱数产生器可以帮助系统进行一些密码加密演算的功能
+					设定终端机(console) 字形
+					启动动态装置管理员：就是udevd 这个家伙！用在动态对应实际装置存取与装置档名对应的一个服务！相当重要喔！也是在这里启动的！
+			sysinit.target执行之后就到basic.target
+			basic.target    了解即行
+				载入alsa 音效驱动程式：这个alsa 是个音效相关的驱动程式，会让你的系统有音效产生啰；
+				载入firewalld 防火墙：CentOS 7.x 以后使用firewalld 取代iptables 的防火墙设定，虽然最终都是使用iptables 的架构， 不过在设定上面差很多喔！
+				载入CPU 的微指令功能；
+				启动与设定SELinux 的安全本文：如果由disable 的状态改成enable 的状态，或者是管理员设定强制重新设定一次SELinux 的安全本文， 也在这个阶段处理喔！
+				将目前的开机过程所产生的开机资讯写入到/var/log/dmesg 当中
+				由/etc/sysconfig/modules/*.modules 及/etc/rc.modules 载入管理员指定的模组！
+				载入systemd 支援的timer 功能；
 
-	systemctl启动multi-user.target下的服务
-		加载内核驱动硬件后,经过sysinit.target的初始化流程让系统可以读写之后,加上basic.target让系统成为操系统的基础,之后就是服务器要顺利运行时,需要的各种主机服务及提供服务器功能的网络服务启动,这些服务的启动大多是在multi-user.target操作环境下
+		systemctl启动multi-user.target下的服务
+			加载内核驱动硬件后,经过sysinit.target的初始化流程让系统可以读写之后,加上basic.target让系统成为操系统的基础,之后就是服务器要顺利运行时,需要的各种主机服务及提供服务器功能的网络服务启动,这些服务的启动大多是在multi-user.target操作环境下
 
-		你可以到/etc/systemd/system/multi-user.target.wants/ 里头去瞧瞧预设要被启动的服务喔！
+			你可以到/etc/systemd/system/multi-user.target.wants/ 里头去瞧瞧预设要被启动的服务喔！
 
-		也就是说，一般来说服务的启动脚本设定都是放在底下的目录内：
+			也就是说，一般来说服务的启动脚本设定都是放在底下的目录内：
 
-		/usr/lib/systemd/system (系统预设的服务启动脚本设定)
-		/etc/systemd/system (管理员自己开发与设定的脚本设定)
+			/usr/lib/systemd/system (系统预设的服务启动脚本设定)
+			/etc/systemd/system (管理员自己开发与设定的脚本设定)
 
-		而用户针对主机与网络服务的各项unit若要enable的话,就是将它放到/etc/systemd/system/multi-user.target.wants/ 这个目录底下做个连结
-		#将vsftpd.service先disable再enable看看输出的资讯为何？
-			[root@study ~]# systemctl disable vsftpd.service 
-			rm ' /etc/systemd/system/multi-user.target.wants/ vsftpd.service'
+			而用户针对主机与网络服务的各项unit若要enable的话,就是将它放到/etc/systemd/system/multi-user.target.wants/ 这个目录底下做个连结
+			#将vsftpd.service先disable再enable看看输出的资讯为何？
+				[root@study ~]# systemctl disable vsftpd.service 
+				rm ' /etc/systemd/system/multi-user.target.wants/ vsftpd.service'
 
-			[root@study ~]# systemctl enable vsftpd.service 
-			ln -s '/usr/lib/systemd/system/vsftpd.service' ' /etc/systemd/system/multi-user.target.
-			 wants/ vsftpd.service'
+				[root@study ~]# systemctl enable vsftpd.service 
+				ln -s '/usr/lib/systemd/system/vsftpd.service' ' /etc/systemd/system/multi-user.target.
+				 wants/ vsftpd.service'
 
-		开机启动运行服务
-			# 1.先看一下/etc/rc.d/rc.local的权限，然后检查multi-user.target有没有这个服务 
-			[root@study ~]# ll /etc/rc.d/rc.local 
-			-rw -r--r-- . 1 root root 473 Mar 6 13:48 /etc/rc.d/rc.local
+			开机启动运行服务
+				# 1.先看一下/etc/rc.d/rc.local的权限，然后检查multi-user.target有没有这个服务 
+				[root@study ~]# ll /etc/rc.d/rc.local 
+				-rw -r--r-- . 1 root root 473 Mar 6 13:48 /etc/rc.d/rc.local
 
-			[root@study ~]# systemctl status rc-local.service
-			rc-local.service - /etc/rc.d/rc.local Compatibility
-			   Loaded: loaded (/usr/lib/systemd/system/rc-local.service; static)
-			   Active: inactive (dead)
+				[root@study ~]# systemctl status rc-local.service
+				rc-local.service - /etc/rc.d/rc.local Compatibility
+				   Loaded: loaded (/usr/lib/systemd/system/rc-local.service; static)
+				   Active: inactive (dead)
 
-			[root@study ~]# systemctl list-dependencies multi-user.target | grep rc-local 
-			#明明就有这个服务，但是rc.local不具有可执行(x)的权限，因此这个服务不会被执行
+				[root@study ~]# systemctl list-dependencies multi-user.target | grep rc-local 
+				#明明就有这个服务，但是rc.local不具有可执行(x)的权限，因此这个服务不会被执行
 
-			# 2.加入可执行权限后，再看一下rc-local是否可被启用！
-			[root@study ~]# chmod a+x /etc/rc.d/rc.local; ll /etc/rc.d/rc.local 
-			-rwxr-xr-x . 1 root root 473 Mar 6 13:48 / etc/rc.d/rc.local
+				# 2.加入可执行权限后，再看一下rc-local是否可被启用！
+				[root@study ~]# chmod a+x /etc/rc.d/rc.local; ll /etc/rc.d/rc.local 
+				-rwxr-xr-x . 1 root root 473 Mar 6 13:48 / etc/rc.d/rc.local
 
-			[root@study ~]# systemctl daemon-reload 
-			[root@study ~]# systemctl list-dependencies multi-user.target | grep rc-local 
-			├─rc-local.service    #这个服务确实被记录到启动的环境下啰！
+				[root@study ~]# systemctl daemon-reload 
+				[root@study ~]# systemctl list-dependencies multi-user.target | grep rc-local 
+				├─rc-local.service    #这个服务确实被记录到启动的环境下啰！
 
-			透过这个chmod a+x /etc/rc.d/rc.local 的步骤，你的许多脚本就可以放在/etc/rc.d/rc.local 这个档案内， 系统在每次开机都会去执行这档案内的指令喔！非常简单吧
+				透过这个chmod a+x /etc/rc.d/rc.local 的步骤，你的许多脚本就可以放在/etc/rc.d/rc.local 这个档案内， 系统在每次开机都会去执行这档案内的指令喔！非常简单吧
+
+			tty登录界面
+				tty登录的界面与服务也是在multi-user.target下面的
+
+		graphical.target(图形界面管理程序)
+			如果default.target是multi-user.target的话,这个步骤不会进行
+
+			systemd启动流程到这里就完毕
+
+	内核模块与依赖性(先了解)
+		内核模块的放置处是/lib/modules/$(uname -r)/kernel
+		arch ：与硬体平台有关的项目，例如CPU 的等级等等；
+		crypto ：核心所支援的加密的技术，例如md5 或者是des 等等；
+		drivers ：一些硬体的驱动程式，例如显示卡、网路卡、PCI 相关硬体等等；
+		fs ：核心所支援的filesystems ，例如vfat, reiserfs, nfs 等等；
+		lib ：一些函式库；
+		net ：与网路有关的各项协定资料，还有防火墙模组(net/ipv4/netfilter/*) 等等；
+		sound ：与音效有关的各项模组；
+
+		/lib/modules/$(uname -r)/modules.dep  记录了内核支持的模块的各项依赖性
+
+		范例一：若我做好一个网路卡驱动程式，档名为a.ko，该如何更新核心相依性？
+		[root@study ~]# cp a.ko /lib/modules/$(uname -r)/kernel/drivers/net 
+		[root@study ~]# depmod
+
+		查看内核模块
+			[root@study ~]# lsmod
+			Module Size Used by
+			nf_conntrack_ftp 18638 0
+			nf_conntrack 105702 1 nf_conntrack_ftp
+			....(中间省略)....
+			qxl 73766 1
+			drm_kms_helper 98226 1 qxl
+			ttm 93488 1 qxl
+			drm 311588 4 qxl,ttm,drm_kms_helper   # drm还被qxl, ttm..等模组使用
+			....(底下省略)....
+			使用lsmod 之后，系统会显示出目前已经存在于核心当中的模组，显示的内容包括有：
+
+			模组名称(Module)；
+			模组的大小(size)；
+			此模组是否被其他模组所使用(Used by)。
+
+			范例一：由上个表格当中，请列出drm这个模组的相关资讯： 
+			[root@study ~]# modinfo drm 
+			filename: /lib/modules/3.10.0-229.el7.x86_64/kernel/drivers/ gpu/drm/drm.ko
+			license: GPL and additional rights
+			description: DRM shared core routines
+			。。。。。
+
+			内核的加载与删除
+
+				[root@study ~]# modprobe [-cfr] module_name 
+				选项与参数：
+				-c ：列出目前系统所有的模组！(更详细的代号对应表)
+				-f ：强制载入该模组；
+				-r ：类似rmmod ，就是移除某个模组啰～
+
+				范例一：载入vfat模组 
+				[root@study ~]# modprobe vfat 
+				#很方便吧！不需要知道完整的模组档名，这是因为该完整档名已经记录到
+				# /lib/modules/`uname -r`/modules.dep当中的缘故啊！如果要移除的话： 
+				[root@study ~]# modprobe -r vfat
