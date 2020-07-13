@@ -6341,3 +6341,66 @@ linux账号管理与ACL权限设置
 			除了第一步骤local-fs.target, swap.target 是透过/etc/fstab 来进行挂载的行为之外，那其他的target 有做啥动作呢？简单得来说说！
 
 
+	systemd执行sysinit.target初始化系统, basick准备系统
+		sysinit.target
+			基本的内核功能,文件系统设置的驱动等在这阶段,了解即行
+				特殊档案系统装置的挂载：包括dev-hugepages.mount dev-mqueue.mount 等挂载服务，主要在挂载跟巨量记忆体分页使用与讯息伫列的功能。挂载成功后，会在/dev 底下建立/dev/hugepages/, /dev/mqueue/ 等目录；
+				特殊档案系统的启用：包括磁碟阵列、网路磁碟(iscsi)、LVM 档案系统、档案系统对照服务(multipath) 等等，也会在这里被侦测与使用到！
+				开机过程的讯息传递与动画执行：使用plymouthd 服务搭配plymouth 指令来传递动画与讯息
+				日志式登录档的使用：就是systemd-journald 这个服务的启用啊！
+				载入额外的核心模组：透过/etc/modules-load.d/*.conf 档案的设定，让核心额外载入管理员所需要的核心模组！
+				载入额外的核心参数设定：包括/etc/sysctl.conf 以及/etc/sysctl.d/*.conf 内部设定！
+				启动系统的乱数产生器：乱数产生器可以帮助系统进行一些密码加密演算的功能
+				设定终端机(console) 字形
+				启动动态装置管理员：就是udevd 这个家伙！用在动态对应实际装置存取与装置档名对应的一个服务！相当重要喔！也是在这里启动的！
+		sysinit.target执行之后就到basic.target
+		basic.target    了解即行
+			载入alsa 音效驱动程式：这个alsa 是个音效相关的驱动程式，会让你的系统有音效产生啰；
+			载入firewalld 防火墙：CentOS 7.x 以后使用firewalld 取代iptables 的防火墙设定，虽然最终都是使用iptables 的架构， 不过在设定上面差很多喔！
+			载入CPU 的微指令功能；
+			启动与设定SELinux 的安全本文：如果由disable 的状态改成enable 的状态，或者是管理员设定强制重新设定一次SELinux 的安全本文， 也在这个阶段处理喔！
+			将目前的开机过程所产生的开机资讯写入到/var/log/dmesg 当中
+			由/etc/sysconfig/modules/*.modules 及/etc/rc.modules 载入管理员指定的模组！
+			载入systemd 支援的timer 功能；
+
+	systemctl启动multi-user.target下的服务
+		加载内核驱动硬件后,经过sysinit.target的初始化流程让系统可以读写之后,加上basic.target让系统成为操系统的基础,之后就是服务器要顺利运行时,需要的各种主机服务及提供服务器功能的网络服务启动,这些服务的启动大多是在multi-user.target操作环境下
+
+		你可以到/etc/systemd/system/multi-user.target.wants/ 里头去瞧瞧预设要被启动的服务喔！
+
+		也就是说，一般来说服务的启动脚本设定都是放在底下的目录内：
+
+		/usr/lib/systemd/system (系统预设的服务启动脚本设定)
+		/etc/systemd/system (管理员自己开发与设定的脚本设定)
+
+		而用户针对主机与网络服务的各项unit若要enable的话,就是将它放到/etc/systemd/system/multi-user.target.wants/ 这个目录底下做个连结
+		#将vsftpd.service先disable再enable看看输出的资讯为何？
+			[root@study ~]# systemctl disable vsftpd.service 
+			rm ' /etc/systemd/system/multi-user.target.wants/ vsftpd.service'
+
+			[root@study ~]# systemctl enable vsftpd.service 
+			ln -s '/usr/lib/systemd/system/vsftpd.service' ' /etc/systemd/system/multi-user.target.
+			 wants/ vsftpd.service'
+
+		开机启动运行服务
+			# 1.先看一下/etc/rc.d/rc.local的权限，然后检查multi-user.target有没有这个服务 
+			[root@study ~]# ll /etc/rc.d/rc.local 
+			-rw -r--r-- . 1 root root 473 Mar 6 13:48 /etc/rc.d/rc.local
+
+			[root@study ~]# systemctl status rc-local.service
+			rc-local.service - /etc/rc.d/rc.local Compatibility
+			   Loaded: loaded (/usr/lib/systemd/system/rc-local.service; static)
+			   Active: inactive (dead)
+
+			[root@study ~]# systemctl list-dependencies multi-user.target | grep rc-local 
+			#明明就有这个服务，但是rc.local不具有可执行(x)的权限，因此这个服务不会被执行
+
+			# 2.加入可执行权限后，再看一下rc-local是否可被启用！
+			[root@study ~]# chmod a+x /etc/rc.d/rc.local; ll /etc/rc.d/rc.local 
+			-rwxr-xr-x . 1 root root 473 Mar 6 13:48 / etc/rc.d/rc.local
+
+			[root@study ~]# systemctl daemon-reload 
+			[root@study ~]# systemctl list-dependencies multi-user.target | grep rc-local 
+			├─rc-local.service    #这个服务确实被记录到启动的环境下啰！
+
+			透过这个chmod a+x /etc/rc.d/rc.local 的步骤，你的许多脚本就可以放在/etc/rc.d/rc.local 这个档案内， 系统在每次开机都会去执行这档案内的指令喔！非常简单吧
