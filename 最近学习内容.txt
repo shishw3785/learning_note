@@ -6262,17 +6262,82 @@ linux账号管理与ACL权限设置
 
 				MBR使用linux的grub2引导程序,里面有3个选项，1选项是可以直接指向linux内核文件并加载核来启动, 2选项将启动管理权交给windows管理,windows loader会接管启动流程,它就能记动windows了, 3选项则是使用Linux在boot sectoer内的启动引导程序,此时就会跳出另一个grub2选项
 
-		加载内核检测硬件与initramfs的功能
-			当由boot loader的管理而开始读取内核文件后,接下来Linux会将内核文件解压缩到内存,并利用内核的功能,开始测试与驱动各周边设备(存付,网卡CPU等),此时Linux内核会以自己的功能重新检测一次硬件,而不一定会使用BIOS检测到的硬件信息,就是说内核此时才开始接管BIOS后的工作
+	加载内核检测硬件与initramfs的功能
+		当由boot loader的管理而开始读取内核文件后,接下来Linux会将内核文件解压缩到内存,并利用内核的功能,开始测试与驱动各周边设备(存付,网卡CPU等),此时Linux内核会以自己的功能重新检测一次硬件,而不一定会使用BIOS检测到的硬件信息,就是说内核此时才开始接管BIOS后的工作
 
-			内核文件位置
-				/boot 名为vmlinuz
+		内核文件位置
+			/boot 名为vmlinuz
 
-			linux内核可以通过动态加载内核模块(类似驱动程序),内核模块位置/lib/modules目录中
+		linux内核可以通过动态加载内核模块(类似驱动程序),内核模块位置/lib/modules目录中
 
-			由于模块放置在磁盘根目录(/lib必须与/在同一分区),因此启动过程中内核必须挂载根目录,这样才能读取内核模块提供的加载驱动程序功能,根目录此时挂载为只读
+		由于模块放置在磁盘根目录(/lib必须与/在同一分区),因此启动过程中内核必须挂载根目录,这样才能读取内核模块提供的加载驱动程序功能,根目录此时挂载为只读
 
-			linux会将非必要的功能且可编译为模块的内核功能,编译成模块,如USB,SATA,SCSI等磁盘设备的驱动程序都是以模块存在,假设linux安装在SATA磁盘,可以通过BIOS的INT 13取得boot loader与内核文件启动,然后内核会开始接管系统并检测硬件及尝试挂载根目录来以得额外的驱动程序,问题是内核根本不认识SATA磁盘,所以需要加载SATA驱动程序否则无法挂载根目录,但SATA的驱动程序在/lib/modules内,这个问题需要虚拟文件系统来处理
+		linux会将非必要的功能且可编译为模块的内核功能,编译成模块,如USB,SATA,SCSI等磁盘设备的驱动程序都是以模块存在,假设linux安装在SATA磁盘,可以通过BIOS的INT 13取得boot loader与内核文件启动,然后内核会开始接管系统并检测硬件及尝试挂载根目录来以得额外的驱动程序,问题是内核根本不认识SATA磁盘,所以需要加载SATA驱动程序否则无法挂载根目录,但SATA的驱动程序在/lib/modules内,这个问题需要虚拟文件系统来处理
 
-			虚拟文件系统
+		虚拟文件系统
+			一般使用的文件名为/boot/initrd或/boot/initramfs，这文件也能通过被boot loader解压缩加载到内存且在内存中模拟一个根目录,且提供一个程序来加载启动过程中需要的内核模块(通常是USB,RAID,SATA等与文件系统与磁盘接口的驱动程序),加载后会帮助内核重新(并挂载实际的根目录)调用systemd开始后续的正常动流程
+
+			其它的虚拟文件详细信息参考鸟哥
+
+
+	第一个程序systemd及使用default.target进入启动程序分析
+		内核完整地加载后,主机就应该开始正确运行了,接下来就到系统的第一个程序执行了,systemd
+
+		systemd最主要的功能就是准备软件的执行环境,包括系统的主机名,网络设置,语文设置等,所有的操作都通过systemd的默认启动服务的集合即/etc/systemd/system/default.target来规划
+
+		systemd的处理流程
+			取得default.target后,它会链接到/usr/lib/systemd/system下去取得multi-user/target或graphical.target其中的一个,假设使用的是graphical.target,接下来systemd会去找两个地方的设置
+				/etc/systemd/system/graphical.target.wants/ 用户设置加载的unit
+				/usr/lib/systemd/system/graphical.target.wants/ 系统默认加载的Unit
+			然后再由/usr/lib/systemd/system/graphical.target配置发现
+				[root@study ~]# cat /usr/lib/systemd/system/graphical.target
+				[Unit]
+				Description=Graphical Interface
+				Documentation=man:systemd.special(7)
+				Requires=multi-user.target
+				After=multi-user.target
+				Conflicts=rescue.target
+				Wants=display-manager.service
+				AllowIsolate=yes
+
+				[Install]
+				Alias=default.target
+			这表示graphical.target 必须要完成multi-user.target 之后才能够进行，而进行完graphical.target 之后，还得要启动display-manager.service 才行的意思 
+			然后
+
+			[root@study ~]# cat /usr/lib/systemd/system/multi-user.target
+			[Unit]
+			Description=Multi-User System
+			Documentation=man:systemd.special(7)
+			Requires=basic.target
+			Conflicts=rescue.service rescue.target
+			After=basic.target rescue.service rescue.target
+			AllowIsolate=yes
+
+			[Install]
+			Alias=default.target
+
+			#然后看看系统预设要载入的unit有哪些？
+			[root@study ~]# ls /usr/lib/systemd/system/multi-user.target.wants
+			brandbot.path plymouth-quit.service systemd-logind.service
+			dbus.service plymouth-quit-wait.service systemd-user-sessions.service
+			getty.target systemd-ask-password-wall.path
+
+			#使用者自订要载入的unit又有哪些呢？
+			[root@study ~]# ls /etc/systemd/system/multi-user.target.wants
+			abrt-ccpp.service crond.service mdmonitor.service sshd.service
+			abrtd.service hypervkvpd.service ModemManager.service sysstat.service
+			abrt-oops.service hypervvssd.service NetworkManager.service tuned.service
+			.....
+			然后又知道multi-usre.target需要在basic.target运行完毕才能加载上述的许多unit,这大概就是systemd的启动流程
+
+		基本上我们CentOS 7.x 的systemd 开机流程大约是这样：
+
+			local-fs.target + swap.target：这两个target 主要在挂载本机/etc/fstab 里面所规范的文件系统与相关的内存交换分区。
+			sysinit.target：这个target 主要在检测硬体，加载所需要的内核模块等动作。
+			basic.target：载入主要的周边硬件驱动程式与防火墙相关任务
+			multi-user.target 底下的其它一般系统或网路服务的载入
+			图形界面相关服务如gdm.service 等其他服务的载入
+			除了第一步骤local-fs.target, swap.target 是透过/etc/fstab 来进行挂载的行为之外，那其他的target 有做啥动作呢？简单得来说说！
+
 
