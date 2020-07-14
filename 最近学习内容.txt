@@ -6466,3 +6466,135 @@ linux账号管理与ACL权限设置
 				#很方便吧！不需要知道完整的模组档名，这是因为该完整档名已经记录到
 				# /lib/modules/`uname -r`/modules.dep当中的缘故啊！如果要移除的话： 
 				[root@study ~]# modprobe -r vfat
+
+
+	Boot loader:Grub2
+
+		boot loader的两个stage
+			MBR是整个硬盘的第一个扇区的一个区块,大小也就446B而已,即使GPT也没有很大的扇区来存储loader数据,那如何解决?
+
+			linux将boot loader的程序代码执行与设置值加载分成两个阶段
+
+			stage 1 执行boot loader主程序
+				主程序必须安装在启动区,即MBR或启动扇区,但MBR太小,所以仅安装boot loader的最小程序,并没有安装loader相关配置文件
+			stage 2 主程序加载配置文件
+				通过boot loader加载所有配置文件与相关的环境参数文件(包括文件系统定义与主要配置文件grub.cfg),一般配置文件都放在/boot下面(boot/grub2)
+
+				[root@study ~]# ls -l /boot/grub2 
+				-rw-r--r--. device.map             <==grub2的装置对应档(底下会谈到) 
+				drwxr-xr-x. fonts                  <==开机过程中的画面会使用到的字型资料 
+				-rw-r--r--. grub.cfg               <==grub2的主设定档！相当重要！
+				-rw-r--r--. grubenv                <==一些环境区块的符号 
+				drwxr-xr-x. i386-pc                <==针对一般x86 PC所需要的grub2的相关模组 
+				drwxr-xr-x. locale                 <==就是语系相关的资料啰 
+				drwxr-xr-x. themes                 <==一些开机主题画面资料
+
+				[root@study ~]# ls -l /boot/grub2/i386-pc 
+				-rw-r--r--. acpi.mod               <==电源管理有关的模组 
+				-rw-r--r--. ata.mod                <==磁碟有关的模组 
+				-rw-r--r--. chain.mod              <==进行loader控制权移交的相关模组 
+				-rw-r--r--. command.lst            <==一些指令相关性的列表 
+				-rw-r--r--. efiemu32.o             <==底下几个则是与uefi BIOS相关的模组
+				-rw-r--r--. efiemu64.o
+				-rw-r--r--. efiemu.mod
+				-rw-r--r--. ext2.mod               <==EXT档案系统家族相关模组 
+				-rw-r--r--. fat.mod                <==FAT档案系统模组 
+				-rw-r-- r--. gcry_sha256.mod        <==常见的加密模组
+				-rw-r--r--. gcry_sha512.mod
+				-rw-r--r--. iso9660.mod            <==光碟档案系统模组 
+				-rw-r--r--. lvm.mod                <==LVM档案系统模组 
+				-rw-r--r- -. mdraid09.mod           <==软体磁碟阵列模组 
+				-rw-r--r--. minix.mod              <==MINIX相关档案系统模组 
+				-rw-r--r--. msdospart.mod          < ==一般MBR分割表 
+				-rw-r--r--. part_gpt.mod           <==GPT分割表 
+				-rw-r--r--. part_msdos.mod         <==MBR分割表 
+				-rw-r-- r--. scsi.mod               <==SCSI相关模组 
+				-rw-r--r--. usb_keyboard.mod       <==底下两个为USB相关模组
+				-rw-r--r--. usb.mod
+				-rw-r--r--. vga.mod                <==VGA显示卡相关模组 
+				-rw-r--r--. xfs.mod                <==XFS档案系统模组
+				
+				从上面的说明你可以知道/boot/grub2/ 目录下最重要的就是(grub2.cfg) 以及各种文件系统的定义！我们的loader 读取了这种文件系统定义数据后，就能够认识文件系统并读取在该文件系统内的核心文件啰。
+
+		grub2的配置文件/boot/grub2/grub.cfg
+			gurb2优点
+				识别与支持较多的文件系统,并可以使用grub2的主程序直接在文件系统中查找内核文件
+				启动时可以(自行编辑与修改启动设置选项),类似bash
+				可以动态查找配置文件,而不需要在修改配置文件后重新安装grub2,即修改后下次启动就生效
+
+			磁盘与分区在grub2的代号
+				grub2最主要的功能是从磁盘中加载内核文件,所以grub2要能识别硬盘才行
+
+					(hd0,1)          #一般的预设语法，由grub2自动判断分割格式 
+					(hd0,msdos1)     #此磁碟的分割为传统的MBR模式 
+					(hd0,gpt1)       #此磁碟的分割为GPT模式
+					够神了吧？跟/dev/sda1 风马牛不相干～怎么办啊？其实只要注意几个东西即可，那就是：
+
+					硬盘代号以小括号( ) 包起来；
+					硬盘以hd 表示，后面会接一组数字；
+					以『搜寻顺序』做为硬盘的编号！(这个重要！)
+					第一个搜寻到的硬盘为0 号，第二个为1 号，以此类推；
+					每颗硬盘的第一个partition 代号为1 ，依序类推。
+
+			/boot/grub2/grub.cfg配置文件(详细查找鸟哥,了解就行)
+
+		grub2配置文件维护/etc/default/grub 与/etc/grub.d
+			grub2主配置文件grub.cfg不建议修改,而是通过这两个文件来处理比较好
+
+			其它参考鸟哥
+
+		initramfs(虚拟文件系统)的重要性与建立新的initramfs
+		测试与安装grub2
+		启动前的额外功能修改
+		为个别选项设置密码
+			以上都都参考鸟哥即可
+
+
+		启动过程的问题解决
+
+			忘记root密码
+				旧版的linux只要能进入并挂载根目录,然后重设root密码即可
+
+				方法一	
+					新版的systemd中,默认的rescue模式无法直接获取root权限,可以通过rd.reak的内核参数来处理,还需在chroot支持,有开selinux还要额外设定
+
+				
+					重启后,进到启动画面,在可启动的选项按e进编辑模式,然后在linux16 那个内核项目后面加上re.break,然后ctrl + x保存，然后再重启
+
+					Generating "/run/initramfs/rdsosreport.txt"
+
+					Enter emergency mode. Exit the shell to continue.
+					Type "journalctl" to view system logs.
+					You might want to save "/run/initramfs/rdsosreport.txt" to a USB stick or /boot
+					after mounting them and attach it to a bug report.
+
+					switch_root:/# #无须输入密码即可取得root权限！
+					switch_root:/# mount #检查一下挂载点！一定会发现/sysroot才是对的！.....(前面省略)..... 
+					/dev/mapper/centos-root on /sysroot type xfs ( ro ,relatime,attr,inode64,noquota)           
+
+
+					switch_root:/# mount -o remount,rw /sysroot   #要先让它挂载成可读写！
+					switch_root:/# chroot /sysroot                #实际切换了根目录的所在！取回你的环境了！
+
+					sh-4.2# echo "your_root_new_pw" | passwd --stdin root 
+					sh-4.2# touch /.autorelabel                   #很重要！变回SELinux的安全本文～ 
+					sh-4.2# exit
+
+					switch_root:/# reboot 
+
+
+				方法二
+					直接启动就以root执行bash方法
+
+					同样重启后在linux16 后加init=/bin/bash,这样启动后就获得一个bash(不需root密码但具有root权限),然后同样的remount根目录,再用echo passwd修改密码,然后重启即可(reboot没有,只能reset或强制关机后启动)
+
+				推荐方法1
+
+
+			因为文件系统错误而无法启动
+				比如/etc/fstab写错又没有mount -a测试,也只能输入root密码后获取bash 再重新挂载根目录再进行后续
+
+				不正常关机导至文件系统不一致也会和上面出现相同的问题
+
+				如果是扇区错误的情况
+					根据提示的文件系统类型错误来修复如xfs可用xfs_repair,恢复不成功可将重要数据复制出来重新安装系统
