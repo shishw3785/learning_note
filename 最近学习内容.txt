@@ -6782,3 +6782,27 @@ linux账号管理与ACL权限设置
 				Thank you!
 
 			由于源代码文件有时并非仅有一个文件,所以我们无法直接编译,需要先产生目标文件,然后再以链接制作为二进制文件,另外如果有一天thanks_2文件要修改,修改thanks_2c文件内容,则只需重新编译thanks_2.c来产生新的thanks_2.o,再以链接制作出二进制可执行文件,不必重新编译其它没修改过的源代码文件
+
+
+		调用外部函数库
+			[root@study ~]# vim sin.c 
+			#include <stdio.h>
+			#include <math.h>
+			int main(void)
+			{
+			        float value;
+			        value = sin ( 3.14 / 2 );
+			        printf("%f\n",value);
+			}
+
+			编译
+			[root@study ~]# gcc sin.c 
+			#新的GCC会主动将函数调进来给你用，所以只要加上include <math.h>就好了！
+
+			实际上数学函数库使用的是libm.so这个函数库,所以最好在编译时将这个函数库包含进去,另外这个函数库放置的地方是系统默认的/lib 与/lib64,所以无需使用-L去加入查找的目录(除非函数库路径有改变),所以上面的编译过程可以是
+			[root@study ~]# gcc sin.c -lm -L/lib -L/lib64   <==重点在-lm
+
+				-l ：是『加入某个函式库(library)』的意思，
+				 m ：则是libm.so 这个函式库，其中， lib 与副档名(.a 或.so)不需要写
+
+				
