@@ -6928,3 +6928,120 @@ linux账号管理与ACL权限设置
 					rm -f main ${OBJS}
 
 			其它详细参考鸟哥
+
+	Tarball管理与建议
+		tarball安装的基本步骤
+			取得原始文件：将tarball 文件在/usr/local/src 目录下解压缩；
+			取得步骤流程：进入新建立的目录底下，去查阅INSTALL 与README 等相关文件内容(很重要的步骤！)；
+			相依属性软体安装：根据INSTALL/README 的内容察看并安装好一些相依的软体(非必要)；
+			建立makefile：以自动检测程序(configure 或config) 检测操作环境，并建立Makefile 这个文件；
+			编译：以make 这个程序并使用该目录下的Makefile 做为他的参数配置文件，来进行make (编译或其他) 的动作；
+			安装：以make 这个程序，并以Makefile 这个参数文件，依据 install 这个目标的(target) 的指定来安装到正确的路径！
+
+			makefile制处出来后,里面会有相当多的target,常见的是install与clean,make clean代表将目标文件清除掉,make则是将源代码进行编译而已,注意,编译完成的可执行文件与相关配置文件还在源代码所在的目录中,因此最后要进行make install来将编译完成的所有东西都安装到正确的路径中,这样就可以使用该软件
+
+			命令执行顺序
+				./configure
+					检测程序
+				make clean
+					不一定要执行这个,但是希望执行一下,因为不确定里面到底有没有上次编译过的目标文件(*.og)
+				make
+				make install
+					将上一步make所编译完成的内容安装到预定的目录中,从而完成安装
+
+
+			ntp tarball安装示范
+
+
+				[root@study ~]# cd /usr/local/src    <==切换目录 
+				[root@study src]# tar -zxvf /root/ntp-4.2.8p3.tar.gz   <==解压缩到此目录 
+				ntp -4.2.8p3/           <==会建立这个目录喔！
+				ntp-4.2.8p3/CommitLog
+				....(底下省略).... 
+				[root@study src]# cd ntp-4.2.8p3 
+				[root@study ntp-4.2.8p3]# vi INSTALL   <==记得README也要看一下！
+				#特别看一下28行到54行之间的安装简介！可以了解如何安装的流程喔！
+				检查configure 支援参数，并实际建置makefile 规则档
+				[root@study ntp*]# ./configure --help | more   <==查询可用的参数有哪些
+				  --prefix=PREFIX install architecture-independent files in PREFIX
+				  --enable-all-clocks + include all suitable non-PARSE clocks:
+				  --enable-parse-clocks - include all suitable PARSE clocks:
+				# 上面列出的是比较重要的，或者是你可能需要的参数功能！
+
+				[root@study ntp*]# ./configure --prefix=/usr/local/ntp \ 
+				> --enable-all-clocks --enable-parse-clocks   <==开始建立makefile
+				checking for a BSD-compatible install... /usr/bin/install -c
+				checking whether build environment is sane... yes
+				....(中间省略).... 
+				checking for gcc... gcc            <==也有找到gcc编译器了！
+				....(中间省略).... 
+				config.status: creating Makefile   <==现在知道这个重要性了吧？
+				config.status: creating config.h
+				config.status: creating evconfig-private.h
+				config.status: executing depfiles commands
+				config.status: executing libtool commands
+				一般来说configure设定参数较重要的就是那个--prefix=/path了，--prefix后面接的路径就是『这个软体未来要安装到那个目录去？』如果你没有指定--prefix=/path这个参数，通常预设参数就是/usr/local至于其他的参数意义就得要参考./configure --help了！这个动作完成之后会产生makefile或Makefile这个档案。当然啦，这个侦测检查的过程会显示在萤幕上， 特别留意关于gcc的检查，还有最重要的是最后需要成功的建立起Makefile才行！
+
+				最后开始编译与安装噜！
+				[root@study ntp*]# make clean; make 
+				[root@study ntp*]# make check 
+				[root@study ntp*]# make install 
+				#将资料给他安装在/usr/local/ntp底下
+
+
+			利用patch更新源代码
+				测试旧版程式的功能
+				[root@study ~]# tar -zxvf main-0.1.tgz 
+				[root@study ~]# cd main-0.1 
+				[root@study main-0.1]# make clean main 
+				[root@study main-0.1]# ./main 
+				version 0.1 
+				Please input your name: VBird 
+				Please enter the degree angle (ex> 90): 45
+				Hi, Dear VBird, nice to meet you.
+				The Sin is: 0.71
+				The Cos is: 0.71
+
+				查看patch file内容
+				[root@study main-0.1]# vim ~/main_0.1_to_0.2.patch 
+				diff -Naur main-0.1/cos_value.c main-0.2/cos_value.c
+				--- main-0.1/cos_value.c 2015-09-04 14:46:59.200444001 +0800
+				+++ main-0.2/cos_value.c 2015-09-04 14:47:10.215444000 +0800
+				@@ -7,5 +7,5 @@
+				 {
+				        float value;
+				....(底下省略)....
+
+				patch 的基本语法如下：
+
+					patch -p数字< patch_file
+					特别留意那个『 -p数字』，那是与patch_file 里面列出的档名有关的资讯。假如在 patch_file 第一行写的是这样：
+
+					*** /home/guest/example/expatch.old
+					那么当我下达『 patch -p0 < patch_file 』时，则更新的档案是『 /home/guest/example/expatch.old 』，如果『 patch -p1 < patch_file』，则更新的档案为『home/guest/ example/expatch.old』，如果『patch -p4 < patch_file』则更新『expatch.old』，也就是说， -pxx那个xx代表『拿掉几个斜线(/)』的意思！这样可以理解了吗？好了，根据刚刚上头的资料，我们可以发现比较的档案是在main-0.1/xxx与main-0.2/xxx ，所以说，如果你是在main-0.1底下，并且想要处理更新时，就得要拿掉一个目录(因为并没有main-0.2的目录存在，我们是在当前的目录进行更新的！)，因此使用的是-p1才对喔
+
+				更新原始码，并且重新编译程式！
+				[root@study main-0.1]# patch -p1 < ../main_0.1_to_0.2.patch
+				patching file cos_value.c
+				patching file main.c
+				patching file Makefile
+				patching file sin_value.c
+				#请注意，鸟哥目前所在目录是在main-0.1底下喔！注意与patch档案的相对路径！
+				# 虽然有五个档案，但其实只有四个档案有修改过喔！上面显示有改过的档案！
+
+				[root@study main-0.1]# make clean main 
+				[root@study main-0.1]# ./main 
+				version 0.2 
+				Please input your name: VBird 
+				Please enter the degree angle (ex> 90): 45
+				Hi, Dear VBird, nice to meet you.
+				The sin(45.000000) is: 0.71
+				The cos(45.000000) is: 0.71
+				 #你可以发现，输出的结果中版本变了，输出资讯多了括号()喔！
+
+				[root@study main-0.1]# make install    <==将他安装到/usr/local/bin给大家用
+				cp -a main /usr/local/bin
+				[root@study main-0.1]# main            <==直接输入指令可执行！
+				[root@study main-0.1]# make uninstall  <==移除此软体！
+				rm -f /usr/local/bin/main
+				很有趣的练习吧！所以你只要下载patch file就能够对你的软体原始码更新了！只不过更新了原始码并非软体就更新！你还是得要将该软体进行编译后，才会是最终正确的软体喔！因为patch的功能主要仅只是更新原始码档案而已！切记切记！此外，如果你patch错误呢？没关系的！我们的patch是可以还原的啊！透过『 patch -R < ../main_0.1_to_0.2.patch 』就可以还原啦！很有趣吧！
