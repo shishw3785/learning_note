@@ -7137,3 +7137,34 @@ linux账号管理与ACL权限设置
 					                ld-linux-x86-64.so.2 (GLIBC_PRIVATE) => /lib64/ld-linux-x86-64.so.2
 
 					ldd可以查看相关的依赖
+
+
+			校验软件正确性
+
+				[root@study ~]# md5sum/sha1sum/sha256sum [-bct] filename 
+				[root@study ~]# md5sum/sha1sum/sha256sum [--status|--warn] --check filename 
+				选项与参数：
+				-b ：使用binary 的读档方式，预设为Windows/DOS 档案型态的读取方式；
+				-c ：检验档案指纹；
+				-t ：以文字型态来读取档案指纹。
+
+				范例一：将刚刚的档案下载后，测试看看指纹码 
+				[root@study ~]# md5sum ntp-4.2.8p3.tar.gz
+				b98b0cbb72f6df04608e1dd5f313808b ntp-4.2.8p3.tar.gz
+				# 看！显示的编码是否与上面相同呢？赶紧测试看看！
+
+				md5sum 得到的字串与官网提供的md5字串对比一样就说明下载的软件没有被修改过,安全
+
+				额外应用
+					如可以给下面文件做md5值记录
+					/etc/passwd
+					/etc/shadow (假如你不让使用者改密码了)
+					/etc/group
+					/usr/bin/passwd
+					/sbin/rpcbind
+					/bin/login (这个也很容易被骇！)
+					/bin/ls
+					/bin/ps
+					/bin/top
+
+					上面这些文件最容易被木马或黑客修改,所以可以将这些文件的md5校验值记录下来,以shell脚本来自行检查是否不同来确保安全
