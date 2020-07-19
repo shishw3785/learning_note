@@ -7045,3 +7045,95 @@ linux账号管理与ACL权限设置
 				[root@study main-0.1]# make uninstall  <==移除此软体！
 				rm -f /usr/local/bin/main
 				很有趣的练习吧！所以你只要下载patch file就能够对你的软体原始码更新了！只不过更新了原始码并非软体就更新！你还是得要将该软体进行编译后，才会是最终正确的软体喔！因为patch的功能主要仅只是更新原始码档案而已！切记切记！此外，如果你patch错误呢？没关系的！我们的patch是可以还原的啊！透过『 patch -R < ../main_0.1_to_0.2.patch 』就可以还原啦！很有趣吧！
+
+
+
+			函数库管理
+				软件之间会互相使用彼此提供的函数库来使用其特殊的功能,如需要验证身份的程序都习惯利用PAM这个模块提供的验证机制来实践,网络连接习惯利用SSL函数库来实现连接加密的机制
+
+				函数库根据被使用的类型而分为静态(static)与动态(Dynamic)函数库
+
+				静态函数库
+					扩展名
+						libxxx.a
+					编译操作
+						这类函数库在编译的时候会直接整合到执行程序中,所以这类编译成的文件会比较大
+					独立执行的状态
+						这类函数库最大的优点,编译成功的可执行文件可以独立运行,而不需要再向外部要求读取函数库的内容
+					升级难易度
+						因为函数库是直接整合到执行文件中,所以函数库升级时,整个执行文件必须要重新编译才能将新版的函数库整合到程序中
+
+				动态函数库
+					扩展名
+						libxxx.so
+					编译操作
+						动态函数库在编译的时候,在程序里面只有一个指针(pinter)的位置而已,就是说动态函数库的内容并没有被整合到执行文件当中,而是执行文件要使用到函数库的功能时,程序才会去读取函数库来使用,所以它的文件较小
+					独立执行的状态
+						不能独立执行,因为当使用到函数库功能时,程序才会去读取函数库,所以函数库文件必须要存在(目录也不能改变)
+					升级难易度
+						函数库升级后,执行文件根本不需要进行重新编译的操作,因为执行文件会直接指向新的函数库文件(前提是函数库新旧版本文件名相同)
+
+				目前linux发行版比较倾向于使用动态函数库
+
+			ldconfig 与 /etc/ld.so.conf
+				将常用到的动态函数库加载到内存当中(缓存,cache),如此一来,当软件要使用动态函数库时,就不需要从头在硬盘读取了,提高了读取速度
+
+				动态函数库加载到内存
+					先在/etc/ld.so.conf里面写入(目录)
+					利用ldconfig执行文件将/etc/ld.so.conf的数据读入缓存中
+					同时将数据记录一份至/etc/ld.so.cache
+
+					[root@study ~]# ldconfig [-f conf] [ -C cache] 
+					[root@study ~]# ldconfig [-p] 
+					选项与参数：
+					-f conf ：那个conf 指的是某个档案名称，也就是说，使用conf 作为libarary 
+						  函式库的取得路径，而不以/etc/ld.so.conf 为预设值
+					-C cache：那个cache 指的是某个档案名称，也就是说，使用cache 作为快取暂存
+						  的函式库资料，而不以/etc/ld.so.cache 为预设值
+					-p ：列出目前有的所有函式库资料内容(在/etc/ld.so.cache 内的资料！)
+
+					范例一：假设我的Mariadb资料库函式库在/usr/lib64/mysql当中，如何读进cache ？
+					[root@study ~]# vim /etc/ld.so.conf.d/vbird.conf 
+					/usr/lib64/mysql    <==这一行新增的啦！
+
+					[root@study ~]# ldconfig   <==画面上不会显示任何的资讯，不要太紧张！正常的！
+
+					[root@study ~]# ldconfig -p
+					924 libs found in cache `/etc/ld.so.cache'
+					        p11-kit-trust.so (libc6,x86-64) => /lib64/p11-kit-trust.so
+					        libzapojit-0.0.so.0 (libc6,x86-64) => /lib64/libzapojit-0.0.so.0
+					....(底下省略).... 
+					#函式库名称=>该函式库实际路径
+
+					可以参考上面的例子把其它的需要的动态函数加入缓存就行
+
+				程序的动态函数库解析 ldd
+
+					[root@study ~]# ldd [-vdr] [filename] 
+					选项与参数：
+					-v ：列出所有内容资讯；
+					-d ：重新将资料有遗失的link 点秀出来！
+					-r ：将ELF 有关的错误内容秀出来！
+
+					范例一：找出/usr/bin/passwd这个档案的函式库资料 
+					[root@study ~]# ldd /usr/bin/passwd 
+					....(前面省略).... 
+					        libpam.so.0 = > /lib64/libpam.so.0 (0x00007f5e683dd000)             <==PAM模组
+					        libpam_misc.so.0 => /lib64/libpam_misc.so.0 (0x00007f5e681d8000)
+					        libaudit.so.1 => /lib64/libaudit.so.1 (0x00007f5e67fb1000)         <==SELinux 
+					        libselinux.so.1 => /lib64/libselinux.so.1 (0x00007f5e67d8c000)     <==SELinux 
+					....(底下省略).... 
+					#我们前言的部分不是一直提到passwd有使用到pam的模组吗！怎么知道？
+					# 利用ldd 察看一下这个档案，看到libpam.so 了吧？这就是pam 提供的函式库
+
+					范例二：找出/lib64/libc.so.6这个函式的相关其他函式库！
+					[root@study ~]# ldd -v /lib64/libc.so.6
+					        /lib64/ld-linux-x86-64.so.2 (0x00007f7acc68f000)
+					        linux-vdso.so.1 => (0x00007fffa975b000)
+
+					        Version information:   <==使用-v选项，增加显示其他版本资讯！
+					        /lib64/libc.so.6:
+					                ld-linux-x86-64.so.2 (GLIBC_2.3) => /lib64/ld-linux-x86-64.so.2
+					                ld-linux-x86-64.so.2 (GLIBC_PRIVATE) => /lib64/ld-linux-x86-64.so.2
+
+					ldd可以查看相关的依赖
