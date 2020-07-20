@@ -7225,3 +7225,126 @@ linux账号管理与ACL权限设置
 		noarch 就是没有任何硬件等级上的限制,一般来说这类rpm文件里面应该没有二进制执行程序,属于shell脚本方面的软件多
 
 		安装软件最好与硬件平台搭配,因为软件有针对CPU硬件平台进行过参数优化
+
+	RPM属性依赖的解决方式 YUM在线升级
+		为了重复利有即有软件功能,很多软件都会以函数库的方式发布部分功能,此外为了节省用户数据量,目前linux发行版在发布软件时,都会将软件的内容分为一般使用与开发使用(development)两大类.如pam-x.x.rpm与pam-devel-x.x.rpm,而默认情况下,大部分的software-devel-x.x.rpm都不会安装
+
+		因为上述现象,所以rpm文件就会有所谓的属性依赖的问题,可用 yum机制 来解决
+
+		先将发布的软件放到YUM服务器,然后分析这些软件的依赖属性问题
+		将软件内记录信息记录下来(header),再将这些信息分析后记录成软件相关的列表(包含软件依赖属性与软件的URL即下载地址),这些软件与列表数据所在的本机或网络上的位置就称为软件源或轮件他库(repository)
+		当客户端有软件安装后,客户端主机主动向YUM服务器的软件源地址下载列表(会放到/var/cache/yum),然后通过列表的数据与本机RPM数据库已存在的软件比较,就能一口气下载
+		所需具有依赖属性的软件,下载软件后再用rpm安装
+
+	RPM软件管理程序
+		其实通过YUM就可以安装软件了,rpm只剩下查询与检验功能的多
+
+		RPM默认安装路径
+			软件的相关信息会写入/var/lib/rpm下的数据库文件中,未来软件升级版本比较与软件查询,RPM数字签名信息都是记录在这里,不能被删除
+
+		RPM安装
+			rpm -ivh packege.rpm 
+			rpm -ivh packege.rpm egegegeg.rpm 一次安装两个
+
+			rpm -ivh packege.rpm --nodeps #忽视依赖,不建议,一般就-ivh参数即可
+
+		RPM升级与更新
+			rpm 
+				-Uvh
+					后面接的软件即使没有安装,系统也将直接安装,若本身软件安装过,则系统自动更新到新版本
+				-Fvh
+					后面接的软件如果没有安装,则该软件不会安装.只有软件本身有安装,才给予升级
+
+			建议 -Fvh 来升级安装,如果软件没有安装过需要安装,可通过-ivh来安装,不过现在有yum了,这些方法就都不用了
+
+		RPM查询(query)
+
+			[root@study ~]# rpm -qa                               <==已安装软件 
+			[root@study ~]# rpm -q[licdR]已安装的软件名称        <==已安装软件 
+			[root@study ~]# rpm -qf存在于系统上面的某个档名      <==已安装软件 
+			[root@study ~]# rpm -qp[licdR]未安装的某个文件名称  <==查阅RPM文件
+			选项与参数：
+			查询已安装软件的资讯：
+			-q ：仅查询，后面接的软件名称是否有安装；
+			-qa ：列出所有的，已经安装在本机Linux 系统上面的所有软件名称；
+			-qi ：列出该软件的详细资讯(information)，包含开发商、版本与说明等；
+			-ql ：列出该软件所有的文件与目录所在完整档名(list)；
+			-qc ：列出该软件的所有设定档(找出在/etc/ 底下的档名而已)
+			-qd ：列出该软件的所有说明档(找出与man 有关的文件而已)
+			-qR ：列出与该软件有关的相依软件所含的文件(Required 的意思)
+			-qf ：由后面接的文件名称，找出该文件属于哪一个已安装的软件；
+			-q --scripts：列出是否含有安装后需要执行的脚本档，可用以debug 喔！
+			查询某个RPM 文件内含有的资讯：
+			-qp[icdlR]：注意-qp 后面接的所有参数以上面的说明一致。但用途仅在于找出
+				    某个RPM 文件内的资讯，而非已安装的软件资讯！注意！
+
+			范例一：找出你的Linux是否有安装logrotate这个软体？
+			[root@study ~]# rpm -q logrotate
+			logrotate-3.8.6-4.el7.x86_64
+			[root@study ~]# rpm -q logrotating
+			package logrotating is not installed
+			# 注意到，系统会去找是否有安装后面接的软体名称。注意，不必要加上版本喔！
+			# 至于显示的结果，一看就知道有没有安装啦！
+
+			范例二：列出上题当中，属于该软体所提供的所有目录与档案： 
+			[root@study ~]# rpm -ql logrotate
+			/etc/cron.daily/logrotate
+			/etc/logrotate.conf
+			....(以下省略).... 
+			#可以看出该软体到底提供了多少的档案与目录，也可以追踪软体的资料。
+
+			范例三：列出logrotate这个软体的相关说明资料： 
+			[root@study ~]# rpm -qi logrotate 
+			Name : logrotate                           #软体名称 
+			Version : 3.8.6                               #软体的版本 
+			Release : 4.el7                               #释出的版本 
+			Architecture : x86_64                              #编译时所针对的硬体等级 
+			Install Date: Mon 04 May 2015 05:52:36 PM CST     #这个软体安装到本系统的时间 
+			Group : System Environment/Base             #软体是放再哪一个软体群组中 
+			Size : 102451                              #软体的大小 
+			License : GPL+                                #释出的授权方式
+			Signature : RSA/SHA256, Fri 04 Jul 2014 11:34:56 AM CST, Key ID 24c6a8a7f4a80eb5
+			Source RPM : logrotate-3.8.6-4.el7.src.rpm       #这就是SRPM的档名 
+			Build Date : Tue 10 Jun 2014 05:58:02 AM CST     #软体编译打包的时间 
+			Build Host : worker1.bsys. centos.org             #在哪一部主机上面编译的
+			Relocations : (not relocatable)   
+			Packager : CentOS BuildSystem <http://bugs.centos.org>
+			Vendor : CentOS
+			URL : https://fedorahosted.org/logrotate/
+			Summary : Rotates, compresses, removes and mails system log files
+			Description :                                     #这个是详细的描述！
+			The logrotate utility is designed to simplify the administration of
+			log files on a system which generates a lot of log files. Logrotate
+			allows for the automatic rotation compression, removal and mailing of
+			log files. Logrotate can be set to handle a log file daily, weekly,
+			monthly or when the log file gets to a certain size. Normally,
+			logrotate runs as a daily cron job.
+
+			Install the logrotate package if you need a utility to deal with the
+			log files on your system.
+			# 列出该软体的information (资讯)，里面的资讯可多著呢，包括了软体名称、
+			# 版本、开发商、SRPM档案名称、打包次数、简单说明资讯、软体打包者、
+			# 安装日期等等！如果想要详细的知道该软体的资料，用这个参数来了解一下
+
+			范例四：分别仅找出logrotate的设定档与说明档 
+			[root@study ~]# rpm -qc logrotate 
+			[root@study ~]# rpm -qd logrotate
+
+			范例五：若要成功安装logrotate ，他还需要什么档案的帮忙？
+			[root@study ~]# rpm -qR logrotate
+			/bin/sh
+			config(logrotate) = 3.8.6-4.el7
+			coreutils >= 5.92
+			....(以下省略)....
+			# 由这里看起来，呵呵～还需要很多档案的支援才行喔！
+
+			范例六：由上面的范例五，找出/bin/sh是那个软体提供的？
+			[root@study ~]# rpm -qf /bin/sh
+			bash-4.2.46-12.el7.x86_64
+			# 这个参数后面接的可是『档案』呐！不像前面都是接软体喔！
+			# 这个功能在查询系统的某个档案属于哪一个软体所有的。
+
+			范例七：假设我有下载一个RPM档案，想要知道该档案的需求档案，该如何？
+			[root@study ~]# rpm -qpR filename.i386.rpm 
+			#加上-qpR ，找出该档案需求的资料！
+			常见的查询就是这些了！要特别说明的是，在查询本机上面的RPM 软体相关资讯时， 不需要加上版本的名称，只要加上软体名称即可！因为他会由/var/lib/rpm 这个资料库里面去查询， 所以我们可以不需要加上版本名称。但是查询某个RPM 档案就不同了，我们必须要列出整个档案的完整档名才行
