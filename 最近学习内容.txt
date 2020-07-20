@@ -6930,241 +6930,298 @@ linux账号管理与ACL权限设置
 			其它详细参考鸟哥
 
 	Tarball管理与建议
-		tarball安装的基本步骤
-			取得原始文件：将tarball 文件在/usr/local/src 目录下解压缩；
-			取得步骤流程：进入新建立的目录底下，去查阅INSTALL 与README 等相关文件内容(很重要的步骤！)；
-			相依属性软体安装：根据INSTALL/README 的内容察看并安装好一些相依的软体(非必要)；
-			建立makefile：以自动检测程序(configure 或config) 检测操作环境，并建立Makefile 这个文件；
-			编译：以make 这个程序并使用该目录下的Makefile 做为他的参数配置文件，来进行make (编译或其他) 的动作；
-			安装：以make 这个程序，并以Makefile 这个参数文件，依据 install 这个目标的(target) 的指定来安装到正确的路径！
+	tarball安装的基本步骤
+		取得原始文件：将tarball 文件在/usr/local/src 目录下解压缩；
+		取得步骤流程：进入新建立的目录底下，去查阅INSTALL 与README 等相关文件内容(很重要的步骤！)；
+		相依属性软体安装：根据INSTALL/README 的内容察看并安装好一些相依的软体(非必要)；
+		建立makefile：以自动检测程序(configure 或config) 检测操作环境，并建立Makefile 这个文件；
+		编译：以make 这个程序并使用该目录下的Makefile 做为他的参数配置文件，来进行make (编译或其他) 的动作；
+		安装：以make 这个程序，并以Makefile 这个参数文件，依据 install 这个目标的(target) 的指定来安装到正确的路径！
 
-			makefile制处出来后,里面会有相当多的target,常见的是install与clean,make clean代表将目标文件清除掉,make则是将源代码进行编译而已,注意,编译完成的可执行文件与相关配置文件还在源代码所在的目录中,因此最后要进行make install来将编译完成的所有东西都安装到正确的路径中,这样就可以使用该软件
+		makefile制处出来后,里面会有相当多的target,常见的是install与clean,make clean代表将目标文件清除掉,make则是将源代码进行编译而已,注意,编译完成的可执行文件与相关配置文件还在源代码所在的目录中,因此最后要进行make install来将编译完成的所有东西都安装到正确的路径中,这样就可以使用该软件
 
-			命令执行顺序
-				./configure
-					检测程序
-				make clean
-					不一定要执行这个,但是希望执行一下,因为不确定里面到底有没有上次编译过的目标文件(*.og)
-				make
-				make install
-					将上一步make所编译完成的内容安装到预定的目录中,从而完成安装
-
-
-			ntp tarball安装示范
+	命令执行顺序
+		./configure
+			检测程序
+		make clean
+			不一定要执行这个,但是希望执行一下,因为不确定里面到底有没有上次编译过的目标文件(*.og)
+		make
+		make install
+			将上一步make所编译完成的内容安装到预定的目录中,从而完成安装
 
 
-				[root@study ~]# cd /usr/local/src    <==切换目录 
-				[root@study src]# tar -zxvf /root/ntp-4.2.8p3.tar.gz   <==解压缩到此目录 
-				ntp -4.2.8p3/           <==会建立这个目录喔！
-				ntp-4.2.8p3/CommitLog
-				....(底下省略).... 
-				[root@study src]# cd ntp-4.2.8p3 
-				[root@study ntp-4.2.8p3]# vi INSTALL   <==记得README也要看一下！
-				#特别看一下28行到54行之间的安装简介！可以了解如何安装的流程喔！
-				检查configure 支援参数，并实际建置makefile 规则档
-				[root@study ntp*]# ./configure --help | more   <==查询可用的参数有哪些
-				  --prefix=PREFIX install architecture-independent files in PREFIX
-				  --enable-all-clocks + include all suitable non-PARSE clocks:
-				  --enable-parse-clocks - include all suitable PARSE clocks:
-				# 上面列出的是比较重要的，或者是你可能需要的参数功能！
-
-				[root@study ntp*]# ./configure --prefix=/usr/local/ntp \ 
-				> --enable-all-clocks --enable-parse-clocks   <==开始建立makefile
-				checking for a BSD-compatible install... /usr/bin/install -c
-				checking whether build environment is sane... yes
-				....(中间省略).... 
-				checking for gcc... gcc            <==也有找到gcc编译器了！
-				....(中间省略).... 
-				config.status: creating Makefile   <==现在知道这个重要性了吧？
-				config.status: creating config.h
-				config.status: creating evconfig-private.h
-				config.status: executing depfiles commands
-				config.status: executing libtool commands
-				一般来说configure设定参数较重要的就是那个--prefix=/path了，--prefix后面接的路径就是『这个软体未来要安装到那个目录去？』如果你没有指定--prefix=/path这个参数，通常预设参数就是/usr/local至于其他的参数意义就得要参考./configure --help了！这个动作完成之后会产生makefile或Makefile这个档案。当然啦，这个侦测检查的过程会显示在萤幕上， 特别留意关于gcc的检查，还有最重要的是最后需要成功的建立起Makefile才行！
-
-				最后开始编译与安装噜！
-				[root@study ntp*]# make clean; make 
-				[root@study ntp*]# make check 
-				[root@study ntp*]# make install 
-				#将资料给他安装在/usr/local/ntp底下
+	ntp tarball安装示范
 
 
-			利用patch更新源代码
-				测试旧版程式的功能
-				[root@study ~]# tar -zxvf main-0.1.tgz 
-				[root@study ~]# cd main-0.1 
-				[root@study main-0.1]# make clean main 
-				[root@study main-0.1]# ./main 
-				version 0.1 
-				Please input your name: VBird 
-				Please enter the degree angle (ex> 90): 45
-				Hi, Dear VBird, nice to meet you.
-				The Sin is: 0.71
-				The Cos is: 0.71
+		[root@study ~]# cd /usr/local/src    <==切换目录 
+		[root@study src]# tar -zxvf /root/ntp-4.2.8p3.tar.gz   <==解压缩到此目录 
+		ntp -4.2.8p3/           <==会建立这个目录喔！
+		ntp-4.2.8p3/CommitLog
+		....(底下省略).... 
+		[root@study src]# cd ntp-4.2.8p3 
+		[root@study ntp-4.2.8p3]# vi INSTALL   <==记得README也要看一下！
+		#特别看一下28行到54行之间的安装简介！可以了解如何安装的流程喔！
+		检查configure 支援参数，并实际建置makefile 规则档
+		[root@study ntp*]# ./configure --help | more   <==查询可用的参数有哪些
+		  --prefix=PREFIX install architecture-independent files in PREFIX
+		  --enable-all-clocks + include all suitable non-PARSE clocks:
+		  --enable-parse-clocks - include all suitable PARSE clocks:
+		# 上面列出的是比较重要的，或者是你可能需要的参数功能！
 
-				查看patch file内容
-				[root@study main-0.1]# vim ~/main_0.1_to_0.2.patch 
-				diff -Naur main-0.1/cos_value.c main-0.2/cos_value.c
-				--- main-0.1/cos_value.c 2015-09-04 14:46:59.200444001 +0800
-				+++ main-0.2/cos_value.c 2015-09-04 14:47:10.215444000 +0800
-				@@ -7,5 +7,5 @@
-				 {
-				        float value;
-				....(底下省略)....
+		[root@study ntp*]# ./configure --prefix=/usr/local/ntp \ 
+		> --enable-all-clocks --enable-parse-clocks   <==开始建立makefile
+		checking for a BSD-compatible install... /usr/bin/install -c
+		checking whether build environment is sane... yes
+		....(中间省略).... 
+		checking for gcc... gcc            <==也有找到gcc编译器了！
+		....(中间省略).... 
+		config.status: creating Makefile   <==现在知道这个重要性了吧？
+		config.status: creating config.h
+		config.status: creating evconfig-private.h
+		config.status: executing depfiles commands
+		config.status: executing libtool commands
+		一般来说configure设定参数较重要的就是那个--prefix=/path了，--prefix后面接的路径就是『这个软体未来要安装到那个目录去？』如果你没有指定--prefix=/path这个参数，通常预设参数就是/usr/local至于其他的参数意义就得要参考./configure --help了！这个动作完成之后会产生makefile或Makefile这个档案。当然啦，这个侦测检查的过程会显示在萤幕上， 特别留意关于gcc的检查，还有最重要的是最后需要成功的建立起Makefile才行！
 
-				patch 的基本语法如下：
-
-					patch -p数字< patch_file
-					特别留意那个『 -p数字』，那是与patch_file 里面列出的档名有关的资讯。假如在 patch_file 第一行写的是这样：
-
-					*** /home/guest/example/expatch.old
-					那么当我下达『 patch -p0 < patch_file 』时，则更新的档案是『 /home/guest/example/expatch.old 』，如果『 patch -p1 < patch_file』，则更新的档案为『home/guest/ example/expatch.old』，如果『patch -p4 < patch_file』则更新『expatch.old』，也就是说， -pxx那个xx代表『拿掉几个斜线(/)』的意思！这样可以理解了吗？好了，根据刚刚上头的资料，我们可以发现比较的档案是在main-0.1/xxx与main-0.2/xxx ，所以说，如果你是在main-0.1底下，并且想要处理更新时，就得要拿掉一个目录(因为并没有main-0.2的目录存在，我们是在当前的目录进行更新的！)，因此使用的是-p1才对喔
-
-				更新原始码，并且重新编译程式！
-				[root@study main-0.1]# patch -p1 < ../main_0.1_to_0.2.patch
-				patching file cos_value.c
-				patching file main.c
-				patching file Makefile
-				patching file sin_value.c
-				#请注意，鸟哥目前所在目录是在main-0.1底下喔！注意与patch档案的相对路径！
-				# 虽然有五个档案，但其实只有四个档案有修改过喔！上面显示有改过的档案！
-
-				[root@study main-0.1]# make clean main 
-				[root@study main-0.1]# ./main 
-				version 0.2 
-				Please input your name: VBird 
-				Please enter the degree angle (ex> 90): 45
-				Hi, Dear VBird, nice to meet you.
-				The sin(45.000000) is: 0.71
-				The cos(45.000000) is: 0.71
-				 #你可以发现，输出的结果中版本变了，输出资讯多了括号()喔！
-
-				[root@study main-0.1]# make install    <==将他安装到/usr/local/bin给大家用
-				cp -a main /usr/local/bin
-				[root@study main-0.1]# main            <==直接输入指令可执行！
-				[root@study main-0.1]# make uninstall  <==移除此软体！
-				rm -f /usr/local/bin/main
-				很有趣的练习吧！所以你只要下载patch file就能够对你的软体原始码更新了！只不过更新了原始码并非软体就更新！你还是得要将该软体进行编译后，才会是最终正确的软体喔！因为patch的功能主要仅只是更新原始码档案而已！切记切记！此外，如果你patch错误呢？没关系的！我们的patch是可以还原的啊！透过『 patch -R < ../main_0.1_to_0.2.patch 』就可以还原啦！很有趣吧！
+		最后开始编译与安装噜！
+		[root@study ntp*]# make clean; make 
+		[root@study ntp*]# make check 
+		[root@study ntp*]# make install 
+		#将资料给他安装在/usr/local/ntp底下
 
 
+	利用patch更新源代码
+		测试旧版程式的功能
+		[root@study ~]# tar -zxvf main-0.1.tgz 
+		[root@study ~]# cd main-0.1 
+		[root@study main-0.1]# make clean main 
+		[root@study main-0.1]# ./main 
+		version 0.1 
+		Please input your name: VBird 
+		Please enter the degree angle (ex> 90): 45
+		Hi, Dear VBird, nice to meet you.
+		The Sin is: 0.71
+		The Cos is: 0.71
 
-			函数库管理
-				软件之间会互相使用彼此提供的函数库来使用其特殊的功能,如需要验证身份的程序都习惯利用PAM这个模块提供的验证机制来实践,网络连接习惯利用SSL函数库来实现连接加密的机制
+		查看patch file内容
+		[root@study main-0.1]# vim ~/main_0.1_to_0.2.patch 
+		diff -Naur main-0.1/cos_value.c main-0.2/cos_value.c
+		--- main-0.1/cos_value.c 2015-09-04 14:46:59.200444001 +0800
+		+++ main-0.2/cos_value.c 2015-09-04 14:47:10.215444000 +0800
+		@@ -7,5 +7,5 @@
+		 {
+		        float value;
+		....(底下省略)....
 
-				函数库根据被使用的类型而分为静态(static)与动态(Dynamic)函数库
+		patch 的基本语法如下：
 
-				静态函数库
-					扩展名
-						libxxx.a
-					编译操作
-						这类函数库在编译的时候会直接整合到执行程序中,所以这类编译成的文件会比较大
-					独立执行的状态
-						这类函数库最大的优点,编译成功的可执行文件可以独立运行,而不需要再向外部要求读取函数库的内容
-					升级难易度
-						因为函数库是直接整合到执行文件中,所以函数库升级时,整个执行文件必须要重新编译才能将新版的函数库整合到程序中
+			patch -p数字< patch_file
+			特别留意那个『 -p数字』，那是与patch_file 里面列出的档名有关的资讯。假如在 patch_file 第一行写的是这样：
 
-				动态函数库
-					扩展名
-						libxxx.so
-					编译操作
-						动态函数库在编译的时候,在程序里面只有一个指针(pinter)的位置而已,就是说动态函数库的内容并没有被整合到执行文件当中,而是执行文件要使用到函数库的功能时,程序才会去读取函数库来使用,所以它的文件较小
-					独立执行的状态
-						不能独立执行,因为当使用到函数库功能时,程序才会去读取函数库,所以函数库文件必须要存在(目录也不能改变)
-					升级难易度
-						函数库升级后,执行文件根本不需要进行重新编译的操作,因为执行文件会直接指向新的函数库文件(前提是函数库新旧版本文件名相同)
+			*** /home/guest/example/expatch.old
+			那么当我下达『 patch -p0 < patch_file 』时，则更新的档案是『 /home/guest/example/expatch.old 』，如果『 patch -p1 < patch_file』，则更新的档案为『home/guest/ example/expatch.old』，如果『patch -p4 < patch_file』则更新『expatch.old』，也就是说， -pxx那个xx代表『拿掉几个斜线(/)』的意思！这样可以理解了吗？好了，根据刚刚上头的资料，我们可以发现比较的档案是在main-0.1/xxx与main-0.2/xxx ，所以说，如果你是在main-0.1底下，并且想要处理更新时，就得要拿掉一个目录(因为并没有main-0.2的目录存在，我们是在当前的目录进行更新的！)，因此使用的是-p1才对喔
 
-				目前linux发行版比较倾向于使用动态函数库
+		更新原始码，并且重新编译程式！
+		[root@study main-0.1]# patch -p1 < ../main_0.1_to_0.2.patch
+		patching file cos_value.c
+		patching file main.c
+		patching file Makefile
+		patching file sin_value.c
+		#请注意，鸟哥目前所在目录是在main-0.1底下喔！注意与patch档案的相对路径！
+		# 虽然有五个档案，但其实只有四个档案有修改过喔！上面显示有改过的档案！
 
-			ldconfig 与 /etc/ld.so.conf
-				将常用到的动态函数库加载到内存当中(缓存,cache),如此一来,当软件要使用动态函数库时,就不需要从头在硬盘读取了,提高了读取速度
+		[root@study main-0.1]# make clean main 
+		[root@study main-0.1]# ./main 
+		version 0.2 
+		Please input your name: VBird 
+		Please enter the degree angle (ex> 90): 45
+		Hi, Dear VBird, nice to meet you.
+		The sin(45.000000) is: 0.71
+		The cos(45.000000) is: 0.71
+		 #你可以发现，输出的结果中版本变了，输出资讯多了括号()喔！
 
-				动态函数库加载到内存
-					先在/etc/ld.so.conf里面写入(目录)
-					利用ldconfig执行文件将/etc/ld.so.conf的数据读入缓存中
-					同时将数据记录一份至/etc/ld.so.cache
-
-					[root@study ~]# ldconfig [-f conf] [ -C cache] 
-					[root@study ~]# ldconfig [-p] 
-					选项与参数：
-					-f conf ：那个conf 指的是某个档案名称，也就是说，使用conf 作为libarary 
-						  函式库的取得路径，而不以/etc/ld.so.conf 为预设值
-					-C cache：那个cache 指的是某个档案名称，也就是说，使用cache 作为快取暂存
-						  的函式库资料，而不以/etc/ld.so.cache 为预设值
-					-p ：列出目前有的所有函式库资料内容(在/etc/ld.so.cache 内的资料！)
-
-					范例一：假设我的Mariadb资料库函式库在/usr/lib64/mysql当中，如何读进cache ？
-					[root@study ~]# vim /etc/ld.so.conf.d/vbird.conf 
-					/usr/lib64/mysql    <==这一行新增的啦！
-
-					[root@study ~]# ldconfig   <==画面上不会显示任何的资讯，不要太紧张！正常的！
-
-					[root@study ~]# ldconfig -p
-					924 libs found in cache `/etc/ld.so.cache'
-					        p11-kit-trust.so (libc6,x86-64) => /lib64/p11-kit-trust.so
-					        libzapojit-0.0.so.0 (libc6,x86-64) => /lib64/libzapojit-0.0.so.0
-					....(底下省略).... 
-					#函式库名称=>该函式库实际路径
-
-					可以参考上面的例子把其它的需要的动态函数加入缓存就行
-
-				程序的动态函数库解析 ldd
-
-					[root@study ~]# ldd [-vdr] [filename] 
-					选项与参数：
-					-v ：列出所有内容资讯；
-					-d ：重新将资料有遗失的link 点秀出来！
-					-r ：将ELF 有关的错误内容秀出来！
-
-					范例一：找出/usr/bin/passwd这个档案的函式库资料 
-					[root@study ~]# ldd /usr/bin/passwd 
-					....(前面省略).... 
-					        libpam.so.0 = > /lib64/libpam.so.0 (0x00007f5e683dd000)             <==PAM模组
-					        libpam_misc.so.0 => /lib64/libpam_misc.so.0 (0x00007f5e681d8000)
-					        libaudit.so.1 => /lib64/libaudit.so.1 (0x00007f5e67fb1000)         <==SELinux 
-					        libselinux.so.1 => /lib64/libselinux.so.1 (0x00007f5e67d8c000)     <==SELinux 
-					....(底下省略).... 
-					#我们前言的部分不是一直提到passwd有使用到pam的模组吗！怎么知道？
-					# 利用ldd 察看一下这个档案，看到libpam.so 了吧？这就是pam 提供的函式库
-
-					范例二：找出/lib64/libc.so.6这个函式的相关其他函式库！
-					[root@study ~]# ldd -v /lib64/libc.so.6
-					        /lib64/ld-linux-x86-64.so.2 (0x00007f7acc68f000)
-					        linux-vdso.so.1 => (0x00007fffa975b000)
-
-					        Version information:   <==使用-v选项，增加显示其他版本资讯！
-					        /lib64/libc.so.6:
-					                ld-linux-x86-64.so.2 (GLIBC_2.3) => /lib64/ld-linux-x86-64.so.2
-					                ld-linux-x86-64.so.2 (GLIBC_PRIVATE) => /lib64/ld-linux-x86-64.so.2
-
-					ldd可以查看相关的依赖
+		[root@study main-0.1]# make install    <==将他安装到/usr/local/bin给大家用
+		cp -a main /usr/local/bin
+		[root@study main-0.1]# main            <==直接输入指令可执行！
+		[root@study main-0.1]# make uninstall  <==移除此软体！
+		rm -f /usr/local/bin/main
+		很有趣的练习吧！所以你只要下载patch file就能够对你的软体原始码更新了！只不过更新了原始码并非软体就更新！你还是得要将该软体进行编译后，才会是最终正确的软体喔！因为patch的功能主要仅只是更新原始码档案而已！切记切记！此外，如果你patch错误呢？没关系的！我们的patch是可以还原的啊！透过『 patch -R < ../main_0.1_to_0.2.patch 』就可以还原啦！很有趣吧！
 
 
-			校验软件正确性
 
-				[root@study ~]# md5sum/sha1sum/sha256sum [-bct] filename 
-				[root@study ~]# md5sum/sha1sum/sha256sum [--status|--warn] --check filename 
-				选项与参数：
-				-b ：使用binary 的读档方式，预设为Windows/DOS 档案型态的读取方式；
-				-c ：检验档案指纹；
-				-t ：以文字型态来读取档案指纹。
+	函数库管理
+		软件之间会互相使用彼此提供的函数库来使用其特殊的功能,如需要验证身份的程序都习惯利用PAM这个模块提供的验证机制来实践,网络连接习惯利用SSL函数库来实现连接加密的机制
 
-				范例一：将刚刚的档案下载后，测试看看指纹码 
-				[root@study ~]# md5sum ntp-4.2.8p3.tar.gz
-				b98b0cbb72f6df04608e1dd5f313808b ntp-4.2.8p3.tar.gz
-				# 看！显示的编码是否与上面相同呢？赶紧测试看看！
+		函数库根据被使用的类型而分为静态(static)与动态(Dynamic)函数库
 
-				md5sum 得到的字串与官网提供的md5字串对比一样就说明下载的软件没有被修改过,安全
+		静态函数库
+			扩展名
+				libxxx.a
+			编译操作
+				这类函数库在编译的时候会直接整合到执行程序中,所以这类编译成的文件会比较大
+			独立执行的状态
+				这类函数库最大的优点,编译成功的可执行文件可以独立运行,而不需要再向外部要求读取函数库的内容
+			升级难易度
+				因为函数库是直接整合到执行文件中,所以函数库升级时,整个执行文件必须要重新编译才能将新版的函数库整合到程序中
 
-				额外应用
-					如可以给下面文件做md5值记录
-					/etc/passwd
-					/etc/shadow (假如你不让使用者改密码了)
-					/etc/group
-					/usr/bin/passwd
-					/sbin/rpcbind
-					/bin/login (这个也很容易被骇！)
-					/bin/ls
-					/bin/ps
-					/bin/top
+		动态函数库
+			扩展名
+				libxxx.so
+			编译操作
+				动态函数库在编译的时候,在程序里面只有一个指针(pinter)的位置而已,就是说动态函数库的内容并没有被整合到执行文件当中,而是执行文件要使用到函数库的功能时,程序才会去读取函数库来使用,所以它的文件较小
+			独立执行的状态
+				不能独立执行,因为当使用到函数库功能时,程序才会去读取函数库,所以函数库文件必须要存在(目录也不能改变)
+			升级难易度
+				函数库升级后,执行文件根本不需要进行重新编译的操作,因为执行文件会直接指向新的函数库文件(前提是函数库新旧版本文件名相同)
 
-					上面这些文件最容易被木马或黑客修改,所以可以将这些文件的md5校验值记录下来,以shell脚本来自行检查是否不同来确保安全
+		目前linux发行版比较倾向于使用动态函数库
+
+	ldconfig 与 /etc/ld.so.conf
+		将常用到的动态函数库加载到内存当中(缓存,cache),如此一来,当软件要使用动态函数库时,就不需要从头在硬盘读取了,提高了读取速度
+
+		动态函数库加载到内存
+			先在/etc/ld.so.conf里面写入(目录)
+			利用ldconfig执行文件将/etc/ld.so.conf的数据读入缓存中
+			同时将数据记录一份至/etc/ld.so.cache
+
+			[root@study ~]# ldconfig [-f conf] [ -C cache] 
+			[root@study ~]# ldconfig [-p] 
+			选项与参数：
+			-f conf ：那个conf 指的是某个档案名称，也就是说，使用conf 作为libarary 
+				  函式库的取得路径，而不以/etc/ld.so.conf 为预设值
+			-C cache：那个cache 指的是某个档案名称，也就是说，使用cache 作为快取暂存
+				  的函式库资料，而不以/etc/ld.so.cache 为预设值
+			-p ：列出目前有的所有函式库资料内容(在/etc/ld.so.cache 内的资料！)
+
+			范例一：假设我的Mariadb资料库函式库在/usr/lib64/mysql当中，如何读进cache ？
+			[root@study ~]# vim /etc/ld.so.conf.d/vbird.conf 
+			/usr/lib64/mysql    <==这一行新增的啦！
+
+			[root@study ~]# ldconfig   <==画面上不会显示任何的资讯，不要太紧张！正常的！
+
+			[root@study ~]# ldconfig -p
+			924 libs found in cache `/etc/ld.so.cache'
+			        p11-kit-trust.so (libc6,x86-64) => /lib64/p11-kit-trust.so
+			        libzapojit-0.0.so.0 (libc6,x86-64) => /lib64/libzapojit-0.0.so.0
+			....(底下省略).... 
+			#函式库名称=>该函式库实际路径
+
+			可以参考上面的例子把其它的需要的动态函数加入缓存就行
+
+		程序的动态函数库解析 ldd
+
+			[root@study ~]# ldd [-vdr] [filename] 
+			选项与参数：
+			-v ：列出所有内容资讯；
+			-d ：重新将资料有遗失的link 点秀出来！
+			-r ：将ELF 有关的错误内容秀出来！
+
+			范例一：找出/usr/bin/passwd这个档案的函式库资料 
+			[root@study ~]# ldd /usr/bin/passwd 
+			....(前面省略).... 
+			        libpam.so.0 = > /lib64/libpam.so.0 (0x00007f5e683dd000)             <==PAM模组
+			        libpam_misc.so.0 => /lib64/libpam_misc.so.0 (0x00007f5e681d8000)
+			        libaudit.so.1 => /lib64/libaudit.so.1 (0x00007f5e67fb1000)         <==SELinux 
+			        libselinux.so.1 => /lib64/libselinux.so.1 (0x00007f5e67d8c000)     <==SELinux 
+			....(底下省略).... 
+			#我们前言的部分不是一直提到passwd有使用到pam的模组吗！怎么知道？
+			# 利用ldd 察看一下这个档案，看到libpam.so 了吧？这就是pam 提供的函式库
+
+			范例二：找出/lib64/libc.so.6这个函式的相关其他函式库！
+			[root@study ~]# ldd -v /lib64/libc.so.6
+			        /lib64/ld-linux-x86-64.so.2 (0x00007f7acc68f000)
+			        linux-vdso.so.1 => (0x00007fffa975b000)
+
+			        Version information:   <==使用-v选项，增加显示其他版本资讯！
+			        /lib64/libc.so.6:
+			                ld-linux-x86-64.so.2 (GLIBC_2.3) => /lib64/ld-linux-x86-64.so.2
+			                ld-linux-x86-64.so.2 (GLIBC_PRIVATE) => /lib64/ld-linux-x86-64.so.2
+
+			ldd可以查看相关的依赖
+
+
+	校验软件正确性
+
+		[root@study ~]# md5sum/sha1sum/sha256sum [-bct] filename 
+		[root@study ~]# md5sum/sha1sum/sha256sum [--status|--warn] --check filename 
+		选项与参数：
+		-b ：使用binary 的读档方式，预设为Windows/DOS 档案型态的读取方式；
+		-c ：检验档案指纹；
+		-t ：以文字型态来读取档案指纹。
+
+		范例一：将刚刚的档案下载后，测试看看指纹码 
+		[root@study ~]# md5sum ntp-4.2.8p3.tar.gz
+		b98b0cbb72f6df04608e1dd5f313808b ntp-4.2.8p3.tar.gz
+		# 看！显示的编码是否与上面相同呢？赶紧测试看看！
+
+		md5sum 得到的字串与官网提供的md5字串对比一样就说明下载的软件没有被修改过,安全
+
+		额外应用
+			如可以给下面文件做md5值记录
+			/etc/passwd
+			/etc/shadow (假如你不让使用者改密码了)
+			/etc/group
+			/usr/bin/passwd
+			/sbin/rpcbind
+			/bin/login (这个也很容易被骇！)
+			/bin/ls
+			/bin/ps
+			/bin/top
+
+			上面这些文件最容易被木马或黑客修改,所以可以将这些文件的md5校验值记录下来,以shell脚本来自行检查是否不同来确保安全
+
+
+软件安装RPM,SRPM与YUM
+	源代码虽然可以定制,但是需要检测环境,设置编译参数,编译,最后还要依据个人喜好安装特定位置,过程是真麻烦
+
+	如果我们的linux系统与厂商一样,那么在厂商的系统上面编译出来的执行文件,自然就能在我们的系统上面执行,就是说厂商先在他们的系统上面编译好了我们用户所需要的软件,然后将这个编译好的可执行的软件直接发布给用户来安装
+		厂商将编译好的软件所有相关的文件打包成一个特珠格式的文件,这个软件安装文件内还包含了预先检测系统与依赖软件的脚本,客户端获取这个文件后,通过特定的命令来安装,那么该文件就会依照内部的脚本来检测依赖的辅助软件是否存在,符合就开始安装
+
+		目前Linux常见软件安装方式有两种 
+			dpkg
+				ubuntu等
+			rpm
+				red hat, centos等
+
+	rpm与srpm
+		rpm就是将要安装的软件先编译过,且打包成为rpm机制的文件,通过打包好的软件的默认数据库,记录软件要安装的必须具备的依赖性软件,当在你的Linux安装时,rpm会先依照软件里面的数据查询linux依赖属性是否满足,满足则安装,安装时将软件的信息写入rpm数据库,以便未来查询验证与反安装
+
+		优点
+			由于已编译且打包完毕,所以软件传输与安装方重(不需要重新编译)
+			软件信息都记录在Linux主机上的数据库,方便查询升级与反安装
+
+		缺点
+			软件安装的环境必须与打包时的环境需求一致或相当
+			需要满足软件的依赖属性需求
+			反安装时,最底层的软件不需先删除,否则可能造成系统问题
+
+		通常不同的Linux的发行版所发布的rpm文件,并不能用在其他的Linux版本上,那只能用srpm
+
+		srpm
+			source rpm的意思,就是这个RPM文件里面含有源代码(SRPM所提供的软件内空并没有经过编译,提供的是源代码)
+			通常扩展名 ***.src.rpm
+
+			如何安装
+				先将该软件以RPM管理的方式编译,此时SRPM会被编译成为RPM文件
+				然后将编译完成的RPM文件安装到LINUX系统中
+			为什么不用tarball呢？
+				因为SRPM虽然内容是源代码,但是它仍然含有该软件所需要的依赖性软件说明以及所有RPM文件所提供的数据,同时与RPM不同的是,它也提供了参数配置文件(configure与makefile)
+
+			用处
+				因为rpm文件必须要在相同的Linux环境下才能安装,而SRPM是源代码的格式,我们就可以通过修改SRPM内的参数配置文件,然后重新编译产生能适合我们LINUX环境的RPM文件
+
+
+	什么是i386, i586, i686, noarch, x86_64
+		从上面的说明，现在我们知道RPM 与SRPM 的格式分别为：
+
+		xxxxxxxxx.rpm    <==RPM的格式，已经经过编译且包装完成的rpm档案；
+		xxxxx.src.rpm    <==SRPM的格式，包含未编译的原始码资讯。
+		那么我们怎么知道这个软体的版本、适用的平台、编译释出的次数呢？只要透过档名就可以知道了！例如 rp-pppoe-3.11-5.el7.x86_64.rpm 这的档案的意义为：
+
+		rp-pppoe - 3.11 -      5        .el7.x86_64 .rpm
+		软体名称  软体的版本 发布的次数 适合的硬体平台  扩展名
+
+		i386 i586 i686 都是比较旧的CPU等级
+		X86_64 针对64位的CPU进行优化编译设置
+		noarch 就是没有任何硬件等级上的限制,一般来说这类rpm文件里面应该没有二进制执行程序,属于shell脚本方面的软件多
+
+		安装软件最好与硬件平台搭配,因为软件有针对CPU硬件平台进行过参数优化
