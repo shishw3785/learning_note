@@ -7247,7 +7247,7 @@ linux账号管理与ACL权限设置
 			rpm -ivh packege.rpm egegegeg.rpm 一次安装两个
 
 			rpm -ivh packege.rpm --nodeps #忽视依赖,不建议,一般就-ivh参数即可
-
+								 --replacepkgs #重新安装软件,如软件的某个重要文件修改错了或丢失
 		RPM升级与更新
 			rpm 
 				-Uvh
@@ -7348,3 +7348,77 @@ linux账号管理与ACL权限设置
 			[root@study ~]# rpm -qpR filename.i386.rpm 
 			#加上-qpR ，找出该档案需求的资料！
 			常见的查询就是这些了！要特别说明的是，在查询本机上面的RPM 软体相关资讯时， 不需要加上版本的名称，只要加上软体名称即可！因为他会由/var/lib/rpm 这个资料库里面去查询， 所以我们可以不需要加上版本名称。但是查询某个RPM 档案就不同了，我们必须要列出整个档案的完整档名才行
+
+
+
+		RPM验证
+			作用方式是使用/var/lib/rpm下面的数据库内容来比对目前linux系统的环境下的所有安装文件
+
+			[root@study ~]# rpm -Va 
+			[root@study ~]# rpm -V已安装的软体名称 
+			[root@study ~]# rpm -Vp某个RPM档案的档名 
+			[root@study ~]# rpm -Vf在系统上面的某个档案
+			选项与参数：
+			-V ：后面加的是软体名称，若该软体所含的档案被更动过，才会列出来；
+			-Va ：列出目前系统上面所有可能被更动过的档案；     #可查看是否被攻击修改文件了
+			-Vp ：后面加的是档案名称，列出该软体内可能被更动过的档案；
+			-Vf ：列出某个档案是否被更动过～
+
+			范例一：列出你的Linux内的logrotate这个软体是否被更动过？
+			[root@study ~]# rpm -V logrotate 
+			#如果没有出现任何讯息，恭喜你，该软体所提供的档案没有被更动过。
+			# 如果有出现任何讯息，才是有出现状况啊！
+
+			范例二：查询一下，你的/etc/crontab是否有被更动过？
+			[root@study ~]# rpm -Vf /etc/crontab
+			.......T. c /etc/crontab
+			# 瞧！因为有被更动过，所以会列出被更动过的资讯类型！
+
+			请修改/etc/logrotate.conf 内的rotate 变成 5
+
+			[root@study ~]# rpm -V logrotate
+			..5....T. c /etc/logrotate.conf
+
+			最前面的几个资讯是：
+
+			S ：(file Size differs) 档案的容量大小是否被改变
+			M ：(Mode differs) 档案的类型或档案的属性(rwx) 是否被改变？如是否可执行等参数已被改变
+			5 ：(MD5 sum differs) MD5 这一种指纹码的内容已经不同
+			D ：(Device major/minor number mis-match) 装置的主/次代码已经改变
+			L ：(readLink(2) path mis-match) Link 路径已被改变
+			U ：(User ownership differs) 档案的所属人已被改变
+			G ：(Group ownership differs) 档案的所属群组已被改变
+			T ：(mTime differs) 档案的建立时间已被改变
+			P ：(caPabilities differ) 功能已经被改变
+
+			至于那个c 代表的是『 Config file 』的意思，也就是档案的类型，档案类型有底下这几类：
+
+			c ：设定档(config file)
+			d ：文件资料档(documentation)
+			g ：鬼档案～通常是该档案不被某个软体所包含，较少发生！(ghost file)
+			l ：授权档案(license file)
+			r ：读我档案(read me)
+
+			配置文件被修改是正常,如果是二进制文件被修改就要小心了
+
+		RPM 数字签名
+			tarball可以使用md5校验值来检查文件,不过校验值也可能被修改,rpm使用数字签名来检验软件的来源
+
+			软件开发商推出的软件也会有自己的签名系统,厂商以数字签名系统产生一个专属于该软件的签名,并将该签名的公钥发出,当你要安装一个RPM文件时
+				首先必须先安装原厂发布的公钥文件
+				安装RPM时,RPM命令会读取RPM文件的签名信息与本机系统内的签名信息比对
+				签名相同则安装,否则警告停止安装
+
+			CENTOS 使用的数字签名系统为GNU计划的GPG(自己理解厂商发布的公钥文件里面包含有),Centos的数字签名位于
+			ll /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
+			透过底下的方式来安装即可喔！
+			[root@study ~]# rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 #系统本身有安装,了解即可
+
+		RPM反安装与重建数据库
+			rpm -e 软件名   #卸载软件 
+				注意由于软件有依赖性,所以要卸载的软件应该由底层开始卸载,如果强制卸载软件,但软件本身有依赖性,则使用到某个函数库的软件可能功能会失效
+
+			重建数据库
+				由于软件的安装,升级与卸载等,某些操作或许可能会导致RPM数据库/var/lib/rpm内的文件损坏,可以重建一下数据库
+					rpm --rebuilddb
