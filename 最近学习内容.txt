@@ -7422,3 +7422,293 @@ linux账号管理与ACL权限设置
 			重建数据库
 				由于软件的安装,升级与卸载等,某些操作或许可能会导致RPM数据库/var/lib/rpm内的文件损坏,可以重建一下数据库
 					rpm --rebuilddb
+
+	yum 查询 安装 升级 删除
+		yum查询
+			[root@study ~]# yum [option] [查询工作项目] [相关参数] 
+			选项与参数：
+			[option]：主要的选项，包括有：
+			  -y ：当yum 要等待使用者输入时，这个选项可以自动提供yes 的回应；
+			  --installroot=/some/path ：将该软体安装在/some/path 而不使用预设路径
+			[查询工作项目] [相关参数]：这方面的参数有：
+			  search ：搜寻某个软体名称或者是描述(description) 的重要关键字；
+			  list ：列出目前yum 所管理的所有的软体名称与版本，有点类似rpm -qa；
+			  info ：同上，不过有点类似rpm -qai 的执行结果；
+			  provides：从档案去搜寻软体！类似rpm -qf 的功能！
+
+			范例一：搜寻磁碟阵列(raid)相关的软体有哪些？
+			[root@study ~]# yum search raid 
+			Loaded plugins: fastestmirror, langpacks       # yum系统自己找出最近的yum server 
+			Loading mirror speeds from cached hostfile     #找出速度最快的那一部yum server 
+			 * base: ftp.twaren .net                        #底下三个软体库，且来源为该伺服器！
+			 * extras: ftp.twaren.net
+			 * updates: ftp.twaren.net
+			....(前面省略)....
+			dmraid-events-logwatch.x86_64 : dmraid logwatch-based email reporting
+			dmraid-events.x86_64 : dmevent_tool (Device-mapper event tool) and DSO
+			iprutils.x86_64 : Utilities for the IBM Power Linux RAID adapters
+			mdadm.x86_64 : The mdadm program controls Linux md devices (software RAID arrays)
+			....(后面省略)....
+			# 在冒号(:) 左边的是软体名称，右边的​​则是在RPM 内的name 设定(软体名)
+			# 瞧！上面的结果，这不就是与RAID 有关的软体吗？如果想了解mdadm 的软体内容呢？
+
+			范例二：找出mdadm这个软体的功能为何 
+			[root@study ~]# yum info mdadm 
+			Installed Packages        <==这说明该软体是已经安装的了 
+			Name : mdadm       <==这个软体的名称 
+			Arch : x86_64      <= =这个软体的编译架构 
+			Version : 3.3.2       <==此软体的版本 
+			Release : 2.el7       <==释出的版本 
+			Size : 920 k       <==此软体的档案总容量 
+			Repo : installed   <==软体库回报说已安装的
+			From repo : anaconda
+			Summary : The mdadm program controls Linux md devices (software RAID arrays)
+			URL : http://www.kernel.org/pub/linux/utils/raid/mdadm/
+			License : GPLv2+
+			Description : The mdadm program is used to create, manage, and monitor Linux MD (software
+			            : RAID) devices. As such, it provides similar functionality to the raidtools
+			            : package. However, mdadm is a single program, and it can perform
+			            : almost all functions without a configuration file, though a configuration
+			            : file can be used to help with some common tasks.
+			# 不要跟我说，上面说些啥？自己找字典翻一翻吧！拜托拜托！
+
+			范例三：列出yum伺服器上面提供的所有软体名称 
+			[root@study ~]# yum list 
+			Installed Packages    <==已安装软体
+			GConf2.x86_64 3.2.6-8.el7 @anaconda
+			LibRaw.x86_64 0.14.8-5.el7.20120830git98d925 @base
+			ModemManager.x86_64 1.1.0-6.git20130913.el7 @anaconda
+			....(中间省略).... 
+			Available Packages    <==还可以安装的其他软体
+			389-ds-base.x86_64 1.3.3.1-20.el7_1 updates
+			389-ds-base-devel.x86_64 1.3.3.1-20.el7_1 updates
+			389-ds-base-libs.x86_64 1.3.3.1-20.el7_1 updates
+			....(底下省略)....
+			# 上面提供的意义为：『 软体名称版本在那个软体库内』
+
+			范例四：列出目前伺服器上可供本机进行升级的软体有哪些？
+			[root@study ~]# yum list updates   <==一定要是update s喔！
+			Updated Packages
+			NetworkManager.x86_64 1:1.0.0-16.git20150121.b4ea599c.el7_1 updates
+			NetworkManager-adsl.x86_64 1:1.0.0-16.git20150121.b4ea599c.el7_1 updates
+			....(底下省略)....
+			# 上面就列出在那个软体库内可以提供升级的软体与版本！
+
+			范例五：列出提供passwd这个档案的软体有哪些 
+			[root@study ~]# yum provides passwd
+			passwd-0.79-4.el7.x86_64 : An utility for setting or changing passwords using PAM
+			Repo : base
+
+			passwd-0.79-4.el7.x86_64 : An utility for setting or changing passwords using PAM
+			Repo : @anaconda
+			# 找到啦！就是上面的这个软体提供了passwd 这个程式！
+
+		yum 安装与升级
+			[root@study ~]# yum [option] [安装与升级的工作项目] [相关参数] 
+			选项与参数：
+			  install ：后面接要安装的软体！
+			  update ：后面接要升级的软体，若要整个系统都升级，就直接update 即可
+
+			范例一：将前一个练习找到的未安装的pam-devel安装起来 
+			[root@study ~]# yum install pam-devel 
+			Loaded plugins: fastestmirror, langpacks     #首先的5行在找出最快的yum server
+			Loading mirror speeds from cached hostfile
+			 * base: ftp.twaren.net
+			 * extras: ftp.twaren.net
+			 * updates: ftp.twaren.net
+			Resolving Dependencies                       #接下来先处理『属性相依』的软体问题
+			--> Running transaction check
+			---> Package pam-devel.x86_64 0:1.1.8-12.el7_1.1 will be installed
+			--> Processing Dependency: pam(x86-64) = 1.1.8-12.el7_1.1 for package: pam-devel-
+			       1.1.8-12.el7_1.1.x86_64
+			--> Running transaction check
+			---> Package pam.x86_64 0:1.1.8-12.el7 will be updated 
+			---> Package pam.x86_64 0:1.1.8-12.el7_1.1 will be an update
+			--> Finished Dependency Resolution
+			Dependencies Resolved
+
+			# 由上面的检查发现到pam 这个软体也需要同步升级，这样才能够安装新版pam-devel 喔！
+			# 至于底下则是一个总结的表格显示！
+			================================================== ========================================
+			 Package Arch Version Repository Size
+			================================================== ========================================
+			Installing:
+			 pam-devel x86_64 1.1.8-12.el7_1.1 updates 183 k
+			Updating for dependencies:
+			 pam x86_64 1.1.8-12.el7_1.1 updates 714 k
+
+			Transaction Summary
+			================================================== ========================================
+			Install 1 Package                           #要安装的是一个软体 
+			Upgrade ( 1 Dependent package)   #因为相依属性问题，需要额外加装一个软体！
+
+			Total size: 897 k
+			Total download size: 183 k                   #总共需要下载的容量！
+			Is this ok [y/d/N]: y    #你得要自己决定是否要下载与安装！当然是y啊！
+			Downloading packages:                        #开始下载啰！
+			warning: /var/cache/yum/x86_64/7/updates/packages/pam-devel-1.1.8-12.el7_1.1.x86_64.rpm:
+			         Header V3 RSA/SHA256 Signature, key ID f4a80eb5: NOKEY
+			Public key for pam-devel-1.1.8-12.el7_1.1.x86_64.rpm is not installed
+			pam-devel-1.1.8-12.el7_1.1.x86_64.rpm | 183 kB 00:00:00
+			Retrieving key from file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+			Importing GPG key 0xF4A80EB5:
+			 Userid : "CentOS-7 Key (CentOS 7 Official Signing Key) <security@centos.org>"
+			 Fingerprint: 6341 ab27 53d7 8a78 a7c2 7bb1 24c6 a8a7 f4a8 0eb5
+			 Package : centos-release-7-1.1503.el7.centos.2.8.x86_64 (@anaconda)
+			 From : /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+			Is this ok [y/N]: y   #只有在第一次安装才会出现这个项目『确定要安装数位签章』才能继续！
+			Running transaction check
+			Running transaction test
+			Transaction test succeeded
+			Running transaction
+			Warning: RPMDB altered outside of yum.
+			  Updating : pam-1.1.8-12.el7_1.1.x86_64 1/3
+			  Installing : pam-devel-1.1.8-12.el7_1.1.x86_64 2/3
+			  Cleanup : pam-1.1.8-12.el7.x86_64 3/3
+			  Verifying : pam-1.1.8-12.el7_1.1.x86_64 1/3
+			  Verifying : pam-devel-1.1.8-12.el7_1.1.x86_64 2/3
+			  Verifying : pam-1.1.8-12.el7.x86_64 3/3
+
+			Installed:
+			  pam-devel.x86_64 0:1.1.8-12.el7_1.1
+
+			Dependency Updated:
+			  pam.x86_64 0:1.1.8-12.el7_1.1
+
+		yum 删除软件
+			[root@study ~]# yum remove pam-devel
+			Loaded plugins: fastestmirror, langpacks
+			Resolving Dependencies    <==同样的，先解决属性相依的问题
+			--> Running transaction check
+			---> Package pam-devel.x86_64 0:1.1.8-12.el7_1.1 will be erased
+			--> Finished Dependency Resolution
+
+			Dependencies Resolved
+
+			================================================== ========================================
+			 Package Arch Version Repository Size
+			================================================== ========================================
+			Removing:
+			 pam-devel x86_64 1.1.8-12.el7_1.1 @updates 528 k
+
+			Transaction Summary
+			================================================== ========================================
+			Remove 1 Package        #还好！没有相依属性的问题，仅移除一个软体！
+
+			Installed size: 528 k
+			Is this ok [y/N]: y
+			Downloading packages:
+			Running transaction check
+			Running transaction test
+			Transaction test succeeded
+			Running transaction
+			  Erasing : pam-devel-1.1.8-12.el7_1.1.x86_64 1/1
+			  Verifying : pam-devel-1.1.8-12.el7_1.1.x86_64 1/1
+
+			Removed:
+			  pam-devel.x86_64 0:1.1.8-12.el7_1.1
+
+			Complete!
+
+
+	yum配置文件
+		[root@study ~]# vim /etc/yum.repos.d/CentOS-Base.repo
+		[base]
+		name=CentOS-$releasever - Base
+		mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra
+		#baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
+		gpgcheck=1
+		gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+		如上所示，鸟哥仅列出base 这个软体库内容而已，其他的软体库内容请自行查阅啰！上面的资料需要注意的是：
+
+		[base]：代表软体库的名字！中括号一定要存在，里面的名称则可以随意取。但是不能有两个相同的软体库名称， 否则yum 会不晓得该到哪里去找软体库相关软体清单档案。
+
+		name：只是说明一下这个软体库的意义而已，重要性不高！
+
+		mirrorlist=：列出这个软体库可以使用的映射站台，如果不想使用，可以注解到这行；
+
+		baseurl=：这个最重要，因为后面接的就是软体库的实际网址！mirrorlist 是由yum 程式自行去捉映射站台， baseurl 则是指定固定的一个软体库网址！我们刚刚找到的网址放到这里来啦！
+
+		enable=1：就是让这个软体库被启动。如果不想启动可以使用enable=0 喔！
+
+		gpgcheck=1：还记得RPM 的数位签章吗？这就是指定是否需要查阅RPM 档案内的数位签章！
+
+		gpgkey=：就是数位签章的公钥档所在位置！使用预设值即可
+
+
+
+
+		范例一：列出目前yum server所使用的软体库有哪些？
+		[root@study ~]# yum repolist all 
+
+
+
+		修改软件源可能会产生的问题与解决
+			清除掉本机的列表旧数据即可
+				[root@study ~]# yum clean [packages|headers|all] 
+				选项与参数：
+				 packages：将已下载的软体档案删除
+				 headers ：将下载的软体档头删除
+				 all ：将所有软体库资料都删除！
+
+				范例一：删除已下载过的所有软体库的相关资料(含软体本身与清单) 
+				[root@study ~]# yum clean all
+
+	YUM 软件群体组功能
+
+		[root@study ~]# yum [群组功能] [软体群组] 
+		选项与参数：
+		   grouplist ：列出所有可使用的『软体群组组』，例如Development Tools 之类的；
+		   groupinfo ：后面接group_name，则可了解该group 内含的所有软体名；
+		   groupinstall：这个好用！可以安装一整组的软体群组，相当的不错用！
+		   groupremove ：移除某个软体群组；
+
+		范例一：查阅目前软体库与本机上面的可用与安装过的软体群组有哪些？
+		[root@study ~]# yum grouplist 
+		Installed environment groups:             #已经安装的系统环境软体群组
+		   Development and Creative Workstation
+		Available environment groups:
+
+		[root@study ~]# yum groupinstall "Scientific Support"
+		正常情况下系统是会帮你安装好各项软体的。只是伤脑筋的是，刚刚好Scientific Support 里面的软体都是『可选择的』！而不是『主要的(mandatory)
+
+		如果想要让groupinstall 预设安装好所有的optional 软体呢？那就得要修改设定档！更改选groupinstall 选择的软体项目即可！如下所示：
+
+		[root@study ~]# vim /etc/yum.conf 
+		.....(前面省略)..... 
+		distroverpkg=centos-release    #找到这一行，底下新增一行！
+		group_package_types=default, mandatory, optional 
+		.....(底下省略).....
+
+		[root@study ~]# yum groupinstall "Scientific Support"
+
+
+
+	EPEL/EPRepo 外挂软件以及自定义配置文件
+		有些软件并不是在centos 7的软件源中,所以就有EPEL 扩展软件源
+
+		透过上述的CentOS 7 的EPEL 计画来安装netcdf 以及R 这两套软体，该如何处理？
+		答：
+		首先，你的系统应该要针对epel 进行yum 的设定档处理，处理方式如下：
+		[root@study ~]# vim /etc/yum.repos.d/epel.repo
+		[epel]
+		name = epel packages
+		baseurl = https://dl.fedoraproject.org/pub/epel/7/x86_64/
+		gpgcheck = 0
+		enabled = 0
+		鸟哥故意不要启动这个软体仓库，只是未来有需要的时候才进行安装，预设不要去找这个软体库！
+
+		接下来使用这个软体库来进行安装netcdf 与R 的行为喔！
+		[root@study ~]# yum --enablerepo=epel install netcdf R
+
+		使用本机的的安装光盘安装软件
+			假设光盘挂载到/mnt
+
+			[root@study ~]# vim /etc/yum.repos.d/cdrom.repo
+			[mycdrom]
+			name = mycdrom 
+			baseurl = file:///mnt
+			gpgcheck = 0
+			enabled = 0
+
+			[root@study ~]# yum --enablerepo=mycdrom install software_name
