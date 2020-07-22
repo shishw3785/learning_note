@@ -7712,3 +7712,29 @@ linux账号管理与ACL权限设置
 			enabled = 0
 
 			[root@study ~]# yum --enablerepo=mycdrom install software_name
+
+	全系统自动升级
+		[root@study ~]# echo '10 1 * * * root /usr/bin/yum -y --enablerepo=epel update' > /etc/cron.d/yumupdate 
+		[root@study ~]# vim /etc/ crontab
+		最好重新启动crond服务,此外还要分析日志文件与邮件,如果有内核相关的升级,那就得要重启机子才能让安装的软件顺利运行
+
+
+	RPM 与 TARBALL 的选择
+		优先选择原厂的RPM
+			管理安装方便,还有查询验证数字签名等特性
+		特殊软件没有RPM就使用TARBALL
+		用TARBALL测试新版本
+			新版本可能会不稳定有问题,但又想使用新版本(某些功能),可以用TARBALL安装到/usr/local下面,与旧版的软件同时存在而互不干扰
+
+	SRPM的使用
+		一般来说,需要用到SRPM的文件,大部分原因就是你需要重新修改里面的某些设置,让软件加入某些功能
+		具体参考鸟哥Linux
+
+
+X windows
+	略过,具体参考鸟哥
+
+
+
+linux内核编译与设置
+	由于现在的系统强调在线升级功能,因此不建议自定义内核,此章比较进阶,主要与系统移植有关(系统装到U盘,让Linux驱动小家电),略过
