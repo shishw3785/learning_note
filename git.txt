@@ -28,7 +28,7 @@ git
 				git commit -m "修改内容"
 
 	git跟踪并管理的是修改
-	git commit 只负责把暂存区的修改提交到分区
+	git commit 只负责把暂存区的修改提交到分之
 
 	git checkout -- file   把文件在工作区的修改全部撤消
 		file修改没添加到暂存区,checkout后file恢复成与版本库一样的状态
