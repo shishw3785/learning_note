@@ -49,3 +49,175 @@ Beginner' s Guide
 		A signal may also be sent to nginx processes with the help of Unix tools such as the kill utility. In this case a signal is sent directly to a process with a given process ID. The process ID of the nginx master process is written, by default, to the nginx.pid in the directory /usr/local/nginx/logs or /var/run. For example, if the master process ID is 1628, to send the QUIT signal resulting in nginx’s graceful shutdown, execute:
 
 			kill -s QUIT 1628
+
+
+
+	Configuration file's structure
+		If a block directive can have other directives inside braces, it is called a context (examples: events, http, server, and location).
+
+		Directives placed in the configuration file outside of any contexts are considered to be in the main context. The events and http directives reside(属于) in the main context, server in http, and location in server.
+
+	serving static content
+
+		http {
+		    server {
+		    	location / {
+			        root /data/www;
+			    }
+
+			    location /images/ {
+			        root /data;
+			    }
+		    }
+		}
+
+		 For example, in response to the http://localhost/images/example.png request nginx will send the /data/images/example.png file. If such file does not exist, nginx will send a response indicating the 404 error. Requests with URIs not starting with /images/ will be mapped onto the /data/www directory. For example, in response to the http://localhost/some/example.html request nginx will send the /data/www/some/example.html file.
+
+	Setting up a simple proxy server
+		One of the frequent uses of nginx is setting it up as a proxy server, which means a server that receives requests, passes them to the proxied servers, retrieves responses from them, and sends them to the clients.
+
+		In this example, both servers will be defined on a single nginx instance.
+
+		First, define the proxied server by adding one more server block to the nginx’s configuration file with the following contents:
+
+		server {
+		    listen 8080;
+		    root /data/up1;
+
+		    location / {
+		    }
+		}
+
+		proxy server configuration
+
+			server {
+			    location / {
+			        proxy_pass http://localhost:8080/;
+			    }
+
+			    location ~ \.(gif|jpg|png)$ {
+			        root /data/images;
+			    }
+			}
+
+		This server will filter requests ending with .gif, .jpg, or .png and map them to the /data/images directory (by adding URI to the root directive’s parameter) and pass all other requests to the proxied server configured above.
+
+
+	setting up fastcgi proxying
+		nginx can be used to route requests to FastCGI servers which run applications built with various frameworks and programming languages such as PHP.
+
+		Suppose the FastCGI server is accessible on localhost:9000.
+
+		server {
+		    location / {
+		        fastcgi_pass  localhost:9000;
+		        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+		        fastcgi_param QUERY_STRING    $query_string;
+		    }
+
+		    location ~ \.(gif|jpg|png)$ {
+		        root /data/images;
+		    }
+		}
+		This will set up a server that will route all requests except for(除了) requests for static images to the proxied server operating on localhost:9000 through the FastCGI protocol.
+
+
+
+nginx upgdate
+	https://www.cnblogs.com/linuxk/p/9963916.html  # see help
+	先查看旧的的编译参数
+		nginx -v
+	在新的nginx版本中编译并添加进去然后 make
+	备份原来的nginx启动文件
+		cd /usr/local/nginx/sbin
+		mv nginx nginx_old
+	cp新nginx的obj目录下的nginx到/usr/local/nginx/sbin/
+	回到新的nginx目录下更新make upgrade
+
+		[root@localhost nginx-1.14.1]# make upgrade  #这一步会将结束旧进程，并开启新的进程进行管理nginx的任务，从而达到平滑升级的效果
+		/usr/local/nginx/sbin/nginx -t
+		nginx: the configuration file /usr/local/nginx/conf/nginx.conf syntax is ok
+		nginx: configuration file /usr/local/nginx/conf/nginx.conf test is successful
+		kill -USR2 `cat /usr/local/nginx/logs/nginx.pid`  #收到USER2信呈后,会将旧的ningx.pid改名nginx.pid.oldbin
+		sleep 1
+		test -f /usr/local/nginx/logs/nginx.pid.oldbin
+		kill -QUIT `cat /usr/local/nginx/logs/nginx.pid.oldbin`
+
+		这里需要注意的是，使用make upgrade进行平滑升级时，会默认发送USR2信号到/usr/local/nginx/logs/nginx.pid，但是如果你的pid文件位置不一致，就会出现文件不存在的ERROR
+		而我们需要做的是，放弃使用make upgrade，而是直接使用以下命令，假设nginx.pid的路径为：/var/run/nginx.pid
+		[root@localhost nginx-1.14.1]# /usr/local/nginx/sbin/nginx -t
+		nginx: the configuration file /usr/local/nginx/conf/nginx.conf syntax is ok
+		nginx: configuration file /usr/local/nginx/conf/nginx.conf test is successful
+		[root@localhost nginx-1.14.1]# kill -USR2 `cat /var/run/nginx.pid`
+		此时会在/var/run/下生成一个nginx.pid.oldbin的pid文件
+		[root@localhost nginx-1.14.1]# kill -QUIT `cat /var/run/nginx.pid.oldbin`  #退出旧进程
+
+
+nginx.conf 文件结构
+	全局块
+	event 块
+	http 块
+		包含多个server块
+			包含多个location块
+
+	同一配置块中嵌套的配置块不存在次序的关系
+	某个指令在两个不同层级中,则采用'就近原则',以较低层级中的配置为准
+
+	全局块
+		全局块是默认配置文件从开始到event块之间的一部分内容,主要设置一些影响nginx整体运行的配置指令,如运行nginx的用户(组),欢允许生成的work process数,nginx pid等
+	event块
+		涉及的指令主要影响服务器与用户的网络连接. 常用的设置包括对多work process下的网络连接进行序列化,选取哪种事件驱动模型处理连接请求,每个work process可以同时支持的最大连接数等
+	http块
+		重要部分,代理,缓存,日志定义等绝大多数功能和第三方模块的配置都是放在这里
+		http块可以包含自己的全局块,也可以包含server块,server块中又可以包含 location块
+		可以在http配置指令包括文件引入,MIME-TYPE定义,日志定义,是否使用sendfile传输文件,连接超时时间,单连接请求数上限等
+	server块
+		http块可以包含多个server块,server块相当于一台虚拟主机,常见的配置项是本虚拟主机的监听配置和名称或IP配置
+	location块
+		每个server可以包含多个location块,主要作用是基于nginx服务器收到的请求字符串,对除虚拟主机名称之外的字符串进行匹配,对特定的请求进行处理
+
+
+	user user [group];
+		指定Nginx运行的用户,group为可选项,如果希望所有用户都能执行Nginx,可设置为用户与组nobody,或直接#掉这行
+	worker_process number | auto;
+		配置允许生成的worker_process数量,理论上是越大支持的并发数量越多,但worker_process数值受软件本身与操作系统与硬件等资源的制约
+	include file;
+		配置文件引入,可放入任何位置,支持相对路径
+	accept_mutex on|off;
+		设置网络连接的序列化.(UNIX网络编程)提到的惊群问题,当有一个连接来时,多个睡眠的进程被同时唤醒,但只有一个进程可获得连接,每次唤醒的进程越多,会影响系统性能,在nginx多进程下就有可能会有惊群.默认开启On,让连接序列化.此指令在event中配置
+	multi_accept on|off;
+		设置欢笑许时是接收多个网络,默认为off,即每个worker process一次只能接收一个新到达的连接
+	use method
+		可选有select,poll,epoll等模型,在event中配置
+	worker_connections numbers;
+		设置允许每一个worker process同时开启的最大连接数,默认1024,在event块内配置
+	定义MIME-Type
+		include       mime.types;
+    	default_type  application/octet-stream;
+    	在常用的浏览器中,可以显示的内容有HTML,XML,GIF,FLASH等媒体资源,浏览器需要区分这些资源,使用MIME TYPE,也主浊说MIME TYPE是网络资源的媒体
+
+    自定义服务日志
+    	access_log path [format [buffer=size]];
+    		path 日志的文件存放路径
+    		format 
+    		size 配置临时存放日志的内存缓存区大小
+
+    		access_log logs/access.log main;
+    			main为log_format指令默定义的日志格式字符串的名称
+    			此指令可在http块,server块和location块
+
+    	log_format name string....;
+    		name 格式字符串的名字,默认main
+    		string 日志格式字符串,在定义的过程中,可以使用Nginx配置预设的一些变量获取内容,变量的名称使用双引号括起来,string整体使用单引号括起来
+
+    		#log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+		    #                  '$status $body_bytes_sent "$http_referer" '
+		    #                  '"$http_user_agent" "$http_x_forwarded_for"';
+
+		    此指令块只能在http配置
+
+	sendfile on | of;
+		开启sendfile()传输文件,开启后nginx性能提升,可在http,server location块中configure
+
+	sendfile_max_chunk size;
+		size如大于0,则每个worker_process每次调用sendfile()传输的数据量最大不能超过这个值,如设为0,则无限制,可在http server location中configure
