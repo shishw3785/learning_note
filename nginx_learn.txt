@@ -321,3 +321,81 @@ nginx.conf 文件结构
 				index index.$1.html index.my1.html index.html;
 			}
 			当收到/data/locationtest/web/时,匹配成功,$1为locationtest,然后到/data/locationtest/web目录下按照index顺序依次查找,index.locationtest.html index.my1.html index.html,首先找到哪个页面,就使用哪个页面响应请求
+
+	设置网站的错误页面
+		HTTP 2XX 代表请求正常完成
+		HTTP 3XX 代表网站重定向
+		HTTP 4XX 代表客户端出现错误
+		HTTP 5XX 代表服务器端出现错误
+
+		error_page code ... [=[response]] uri;
+			code 要处理的代码
+			response 可选项,将code指定的错误代码转化为新的错误代码
+			uri 错误面页的路径或者网站地址,如果是路径,则是以NGINX服务器安装路径下的HTML目录为根路径的相对路径,如是网址,则NGINX服务器会直接访问该网址获取错误页面,并返回给用户端
+
+		error_page 404 /404.html
+			设置使用NGINX安装路径/html/404.html页面响应404错误
+
+		error_page 403 http://somewebsite.com/forbidden.html;
+			设置使用网址响应403
+
+		error_page 410 =301 /empty.git
+			NGINX产生410的HTTP消息时,使用NGINX安装路径/html/empty.gif 返回给用户301消息(已移动消息)
+
+		error_page 404 /404.html
+		location /404.html 
+			{
+				root /myserver/errorpages/
+			}
+			不想将错误页面放到NGINX安装路径下面,可以先获取到/404.html,然后将请求定向到新的路径
+
+		error_page 指令可在http server location设置
+
+	基于IP配置Nginx的访问权限
+		由HTTP的标准模块nginx_http_access_module支持,通过IP来判断客户端是否拥有对NGINX的访问权限
+
+		allow address | CIDR | all;
+			address 允许访问的客户端IP, 不支持同时设置多个.需要多个要重复使用allow
+			CIDR 允许客户端的CIDR地址, 如 202.80.18.23/25
+			all 代表允许所有的客户端访问
+
+			支持IPV6地址
+
+		deny address | CIDR | all;
+			addree 禁止访问的IP,重复需要使用deny
+			CIDR
+			all 禁止所有客户端访问
+
+		location / {
+			deny 192.168.1.1;
+			allow 192.168.1.0/24;
+			deny all;
+		}
+		192.168.1.0/24客户端可以访问,因为NGINX解析过程是按顺序匹配,匹配对应行成功后就停止继续向下搜索(与iptables类似).
+
+	基于密码配置的nginx访问权限
+		由标准模块ngx_http_auth_basic_module支持
+
+		auth_basic string | off;
+			string 开启认证功能,并配置验证时的指示信息
+			off 关闭此功能
+
+		auth_basic_user_file file;
+			file 为密码文件的绝对路径
+
+		密码文件格式,支持明文(测试不成功)与加密的格式
+			name1:passwd1
+			name2:passwd2:comment
+			.....
+
+		加用户ttlsa
+
+		echo -n 'ttlsa:' >> /usr/local/nginx/conf/passwd
+	    设置加密密码
+		为ttlsa用户密码设置为www.ttlsa.com
+
+		openssl passwd www.ttlsa.com >> /usr/local/nginx/conf/passwd
+		
+		cat /usr/local/nginx/conf/passwd
+		ttlsa:I5OG.QXtiqFJs
+		
