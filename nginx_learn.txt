@@ -221,3 +221,103 @@ nginx.conf 文件结构
 
 	sendfile_max_chunk size;
 		size如大于0,则每个worker_process每次调用sendfile()传输的数据量最大不能超过这个值,如设为0,则无限制,可在http server location中configure
+
+	配置连接超时时间
+		keepalive_timeout timeout [header_timeout];
+			timeout 服务器端对连接的保持时间,默认75s
+			header_timeout 可选项,在应答报文头部的Keep-Alive域设置超时时间
+
+			如 keepalive_timeout 120s 100s
+				在服务端保持连接120s,发给用户端的应答报文头部中Keep_Alive域的超时时间为100s
+
+			可以上http,server,location块设置
+
+	keepalive_requests numbers;
+		服务器与客户端建立链接后,客户端通过此链接发送请求,这个指令用来限制请求数,默认设置100
+
+	配置网络监听
+		listen 192.168.1.10:8000 监听具体的IP和具体的端口上的连接
+		listen 192.168.1.10 监听具体IP的所有端口连接
+		listen 8000 监听具体port的所有IP连接,等于listen *:8000
+		listen 192.168.1.10 default_server backlog=1024
+			设置192.168.1.10的连接请求默认由此虚拟机处理,且允许最多1024网络连接同时处于挂起状态(因机器资源不足,暂时被淘汰调离出内存)
+
+	基于名称的虚拟主机配置
+		server_name name...;
+			如server_name myserver.com www.myserver.com;
+				第一个名称作为此虚拟主机的主要名称
+
+		name中可以使用通配符*,但通配符只能用在三段字符组成的名称的首段或尾段,或两段
+			server_name *.myserver.com www.myserver.*;
+
+		name还可以使用正则表达式,并使用"~"作为正则表达式字符串的开始标记
+			server_name ~^www\d+\.myserver\.com$;
+				以www开头,^匹配行首, www后接1个或多个[0-9]的数字,\d代表0到9的任意一个数字, + 代表一个或多个前字符, . 在正则表达中有特殊含义,所以有用\转义, 后面是$匹配m行尾
+
+			正则表则式捕获功能
+				server_name ~^www\.(.+)\.com$;
+					如www.myserver.com匹配成功,“myserver”字串就会被获取保存并记录到$1变量中,然后在server块的配置中,可以直接使用$1变量,同理也可以有$2,$3
+
+		因server_name支持通配符又支持正则,如果都匹配成功,则顺序
+			准确匹配server_name
+			通配符在开始匹配server_name成功
+			通配符在结尾匹配server_name成功
+			正则表达式匹配成功
+
+	基于IP的虚拟主机配置
+		server
+			{
+				listen 80;
+				server_name 192.168.1.31;
+				.....
+			}
+
+		server
+			{
+				listen 80;
+				server_name 192.168.1.32
+				.....
+			}
+			这样来自192.168.1.31的请求就由第一台虚拟机来处理,第二台同理,个人理解就是只用IP来访问
+
+	location [ = | ~ | ~* | ^~ ] uri [ ... ];
+		= 用于标准url,要求请求字符串与uri严格匹配,如果匹配成功,就停止继续向下搜索并立即处理此请求
+		~ 用于url包含正则表达式,区分大小写
+		~* 用于url包含正则表达式,不区分大小写
+		^~ 用于标准url,要求NGINX找到标枳url和请求字符串匹配度最高的location后,立即使用此location处理请求,而不再使用location块中的正则uri和请求符串做匹配
+			浏览器传送URL时对一部分字符进行URL编码,比如空格被编码为 %20 , 问号被编译为 %3f 等, ^~ 有一个特点,它对uri中的这些符号会进行编码处理,如 location收到 /html/%20/data ,则当NGINX搜索到配置为 ^~ /html/ /data的location时可以匹配成功
+
+	配置请求的根NGINX变量
+		root path;
+		path为NGINX收到请求后查找资源的根目录路径,PATH中可以包含NGINX变量
+		可在http server location中配置,一般多locationf块,所以在Location配置多
+
+		location /data/{
+			root /locationtest1;
+		}
+		当收到/data/index.html请求时,将会到/locationtest1/data目录下找到index.html响应请求
+		}
+
+	更改location的URL alias
+		alias path;
+
+		如 location ~ ^/data/(.+\.(htm|html))$;
+			{
+				alias /locationtest1/other/$1;
+			}
+
+			当location收到/data/index.html的请求时,匹配成功,之后根据alias指令的配置,nginx将到/locationtest1/other目录下找index.html并响应请求
+
+	设置网站的默认首页
+		index file...;
+
+		作用
+			1 用户在发送请求访问网站时,请求地址可以不写首页名称
+			2 可以根据请求内容设置不同的首页
+		file 可以是多个文件名,用空格隔开,也可以是变量,变量默认为Index.html
+
+		如 location ~ ^/data/(.+)/web/$
+			{
+				index index.$1.html index.my1.html index.html;
+			}
+			当收到/data/locationtest/web/时,匹配成功,$1为locationtest,然后到/data/locationtest/web目录下按照index顺序依次查找,index.locationtest.html index.my1.html index.html,首先找到哪个页面,就使用哪个页面响应请求
