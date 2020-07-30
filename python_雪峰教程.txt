@@ -1,0 +1,43 @@
+python简介
+	连google都在大规模使用,不用担心学了没用
+	当用一种语言开始软件开发时,除了编写代码外,还需要很多基本已经这好的东西加速开发,如开发一个邮件客户端,如果从最底层开始编写网络协议相关的代码可能要一年多也不行.高级语言通常会提供一个比较完善的基础代码库,可以直接调用.如由件协议的SMTP库,我们就可以在现有代码库上开发,短时间就能写邮件客户端软件出来
+
+	python提供了非常完善的基础代码库,包括网络,文件,GUI,数据库等和第三方库,可以直接使用
+
+	优点
+		简洁,高效
+	缺点
+		运行速度慢,因为是解释型语言,代码在执行时会一行一行地翻译成CPU能理解的机器码
+
+python解释器
+	当编写python代码时,得到的是一个.py扩展名的文本文件,要运行代码,就需要python解释器去执行
+
+	官网安装Python后就得到了一个官方解释器材cpython(使用最广),用c语言开发,在命令行下python就启动cpython了
+
+输入和输出
+	>>> print('hello, world')
+	hello, world
+
+	>>> print('hello', 'world')
+	hello world    #print接受多个字符,用逗号隔开,打印时每遇一个, 就会输出一个空格
+
+	print()也可以打印整数，或者计算结果：
+
+	>>> print(300)
+	300
+	>>> print(100 + 200)
+	300
+
+	>>> print('100 + 200 =', 100 + 200)
+	100 + 200 = 300
+
+	输入
+	>>> name = input()
+	Michael
+	>>> name
+	'Michael'
+
+	>>> name = input('please enter your name: ') #显示字符串提醒
+	please enter your name: leison
+	>>> print('hello', name)
+	hello leison
