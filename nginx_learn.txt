@@ -656,3 +656,23 @@ nginx服务器高级配置
 
 		multi_accept
 			用于配置nginx服务器是否尽可能地接收客户端的网络连接请求,默认为off,可调为on
+
+
+	与事件驱动相关的配置
+		use 
+			选择驱动模型
+
+		worker_connections numbers;
+			用于设置nginx的每个工作进程允许同时连接客户端的最大数量,数值与操作系统进程可打开的文件句柄数量有关
+
+			nginx日志报错
+				1024 worker_connections is not enough....
+			此时可更改数值解决
+				worker_connections 65535;
+
+			更改后若出现
+				.....resource limit: 1024
+			则可修改
+				echo "2390251" > /proc/sys/fs/file-max; sysctl -p
+
+		其它略过
