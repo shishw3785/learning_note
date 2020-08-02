@@ -574,7 +574,7 @@ nginx服务器的事件驱动模型
 nginx服务器高级配置
 	针对IPv4的内核7个参数的配置优化,可以将这些内核参数的值加到/etc/sysctl.conf中,然后/sbin/sysctl -p 命令让其生效
 
-		以下参数了解即行
+		以下参数了解即行或直接拿来使用
 
 	1、net.core.netdev_max_backlog参数
 
@@ -623,3 +623,36 @@ nginx服务器高级配置
 	　　该参数的作用与上一个参数类似，设置内核放弃建立连接之前发送SYN包的数量，他的赋值和上个参数一样即可：
 
 	net.ipv4.tcp_syn_retries = 1
+
+
+
+	针对CPU的nginx配置优化的2个指令
+		worker_processes
+			设置nginx的worker_process进程数,一般设置为CPU的核心数一样或2倍即可(cat /proc/cpuinfo  | grep processor)
+
+		worker_cpu_affinity	
+			用来为每个进程分配CPU的工作内核
+
+			如worker_process为4时,可以这样
+			worker_cpu_affinity 0001 0100 1000 0010;
+
+
+	针对网络连接相关的配置的4个指令
+		keepalive_timeout
+			用于设置nginx服务器与客户端保持连接的超时时间
+
+			keepalive_timeout 60 50;
+				客户端与服务器端保持连接的超时时间为60s
+				第二个是可选项,指定使用keep-avle消息头保持活动的有效时间,如果不设置,nginx服务器不会向客户端发送keep-alive消息头保持与某些客户端的连接
+
+		send_timeout
+			用于设置NGINX响应客户端的超时时间,客户端与服务端建立连接后,在这段时间内,客户端没有任何活动,nginx就关闭连接
+
+		client_header_buffer_size
+			用于设置nginx允许客户端请求头部的缓冲区大小,默认1K,可以根据系统分页设置(getconfg PAGESIZE)
+			若nginx有400错误,有很大部分是客户端请求头部过大有关(通常是客户端cookie中写入了较大的值引起),把值调大点可以解决,调整为4k
+
+			client_header_buffer_size 4k;
+
+		multi_accept
+			用于配置nginx服务器是否尽可能地接收客户端的网络连接请求,默认为off,可调为on
