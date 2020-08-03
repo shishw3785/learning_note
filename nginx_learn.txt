@@ -714,7 +714,16 @@ nginx的Gzip压缩
 
 			gzip_min_length 1024;
 
+		gzip_proxied
+			使用NGIX反向代理功能时有效,先略过
 
+		gzip_types
+			nginx根据响应页的MIME类型选择性地开启gzip压缩功能
+			mime-type变量的取值默认为text/html,实际上在gzip指令设置为on时,nginx会对所有的text/html类型页面进行gzip压缩
+			gzip_type text/plain application/x-javascript text/css text/html application/xml;
+
+		gzip_vary
+			设置在使用gzip功能时是否发送带有’vary:accept-encoding头域的响应头部,告诉接收方发送的数据经过了压缩处理
 
 
 
