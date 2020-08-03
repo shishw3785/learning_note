@@ -727,3 +727,20 @@ nginx的Gzip压缩
 
 
 
+	由ngx_http_gzip_static_module模块处理的指令
+		模块主要负责搜索和发送经过gzip功能预压缩的数据,这类数据以.gz作为后缀名存在服务器上.如果客户端请求的数据之前被压缩过,且客户端支持gzip压缩,就直接返回压缩后的数据
+
+		与ngx_http_gzip_module模块不同之处在于,该模块使用的是静态压缩,在HTTP响应头部包含Cconten-Lenth头域来指明报文体的长度,用于服务器可确定响应数据长度的情况.而上面的模块默认使用Chunked编码的动态压缩,主要适用于服务器无法确定响应数据长度的情况.如大文件下载的情形,需要实时生成数据长度
+
+		该模块有关的指令主要有
+				gzip_static gzip_http_version gzip_proxied gzip_disable gzip_vary
+
+		其中gzip_static用于开启和关闭该模块的功能
+				gzip_static on | off | always;
+						on 开启
+						off 关闭
+						always 一直发送gzip预压缩文件,而不检查客户端浏览器是否支持gzip压缩
+		其它指令与上面的模块相同
+			略过
+
+		注意,该模块是可选HTTP模块,如要使用,NGINX编译时要添加 --with_http_gzip_static_module指令
