@@ -676,3 +676,45 @@ nginx服务器高级配置
 				echo "2390251" > /proc/sys/fs/file-max; sysctl -p
 
 		其它略过
+
+
+
+nginx的Gzip压缩
+	相关指令可以在http块,server块,location块中设置
+
+	由ngx_http_gzip_module模块处理的9个指令
+		主要负责gzip功能的开启与设置,对响应数据进行在线实时压缩
+		
+		gzip on|off
+			开户或关闭gzip功能,只有on时,下列的指令设置才有效
+
+		gzip_buffers number size;
+			设置Gzip压缩文件使用缓存空间的大小
+
+			gzip_buffers 32 4k | 16 8k;
+
+		gzip_comp_level level;
+			压缩等级,默认1级
+
+		gzip_disable regex...;
+			针对不同种类的浏览器请求,可以选择性的开启或关闭gzip功能,regex根据客户端的浏览器标志(User-Agent, UA),支持正则
+
+			如
+			gzip_disable MSIE [4-6]\.;
+				#当包含MSIE4 MSIE5 MSIE6的所有浏览器,响应这些请求时,nginx不进行压缩
+
+		gzip_http_version
+			针对HTTP协议版本,设置开启Gzip功能最低HTTP版本
+
+			gzip_http_version 1.0|1.1;
+				现在一般都支持了,采用默认值即可(1.1)
+
+		gzip_min_length length;
+			根据响应页面大小选择性地开启或关闭压缩,默认值为20,建议设置为1K
+
+			gzip_min_length 1024;
+
+
+
+
+
