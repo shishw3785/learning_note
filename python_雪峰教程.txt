@@ -381,3 +381,37 @@ list和tuple
 		>>> t
 		('a', 'b', ['X', 'Y'])
 		#不可变指的是元素的指向不可变,但元素本身是List它是可变的
+
+条件判断
+	if语句
+
+		if <条件判断1>:
+		    <执行1>
+		elif <条件判断2>:
+		    <执行2>
+		elif <条件判断3>:
+		    <执行3>
+		else:
+		    <执行4>
+
+	例
+	age = 16
+	if age > 18:
+	    print('adult', 'you age is', age)
+	elif age < 18:
+	    print('baby', 'you age is', age)
+	else:
+	    print('i dont know')
+
+	 简写
+	 	if x:
+		    print('True')
+		只要x是非零数值、非空字符串、非空list等，就判断为True，否则为False。
+
+	结合input()
+		s = input('birth: ')
+		birth = int(s)   #利用int()把str转成整数类型
+		if birth < 2000:
+		    print('00前')
+		else:
+		    print('00后')
