@@ -787,3 +787,62 @@ nginx的Gzip压缩
 				nginx与squid两类服务器交互,squid可能只支持静态压缩,则nginx可以设置
 					gzip_static on;
 					gzip_http_version 1.0;
+
+
+Nginx的Rewrite功能
+
+	nginx后端服务器组的配置的5个指令
+	upstream
+		设置后端服务器的主要指令,其中指令都在该指令中进行配置
+
+		upstream name { ... }
+
+			name 是给后端服务器起的组名
+			{} 包含的后端服务器,其中可以使用下面介绍的命令
+				server
+				ip_hash
+				keepalive
+				least_conn
+
+			默认情况下,某个服务器组接收到请求以后,按照轮叫调度(Round-Robin, RR)策略顺序选择组内服务器处理请求.如一个服务器请求过程出错,则请求会被顺次交给组内的下一个服务器处理,以此类推,直到返回正常响应.如果组内服务器都出错,则返回最后一个服务器处理的结果
+
+			可以给各服务器配置不同的权重,在server指令中
+
+		server address [parameters];
+			address 服务器的地址,可以是包含port的IP地址,域名地址或者unix domain socker(进程间通信)
+			parameters
+				weight=number
+					为服务器设置权重,权重值高的服务器优先用于处理请求,此时组内服务器的选择策略为加权轮叫策略
+					默认值为1,即采用一般轮叫调度原则处理请求
+				max_fails=number
+					设置一个请求失败的次数,在一定时间范围内.超过这个值的请求失败,服务器被认为无效(down),默认值为1
+					注意 404 状态不被认求是请求失败
+				fail_timeout
+					一个作用是上面的'在一定时间范围内',另一个作用是如一个服务器是down时,则该值为认为服务器无效的持续时间,在这个时间内不再检查服务器的状态
+				backup
+					备用.当正常的服务器down或繁忙时,该服务器才用来处理客户端
+				down
+					设置服务器为down状态
+
+			例子
+				upstream backend{
+					server backend1.example.com weight=5;
+					server 127.0.0.1:8080 max_fails=3 fail_timeout=30; #在30s内请求失败3次视为down
+					server unix:/tmp/backend3;
+				}
+
+		ip_hash
+			用于实现会话保持功能,将某个客户端的多次请求定向到组内的同一台服务器上
+
+			ip_hash不能与weight一起使用,启用ip_hash对应的nginx应该处理最前端的服务器
+
+			客户端IP地址必须是C类地址(其实是只把IP的前24位网络号地址放进hash算法里去计算,就是判断网络号的意思)
+
+			例
+			upstream backend{
+				ip_hash;
+				server myback1.proxy.com;
+				.....
+			}
+
+
