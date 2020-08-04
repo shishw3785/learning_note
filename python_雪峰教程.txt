@@ -359,3 +359,25 @@ list和tuple
 	L = []
 	len(L)
 	>>> 0 
+
+	tuple元组
+		有序不可变,一旦初始化就不能修改
+
+		classmates = ('Michael', 'Bob', 'Tracy')
+		可以通过 classmates[i] 索引读取数据
+
+		但是不能变了,没有append(),insert(),也不能重新赋值classmates[1] = 'hello'
+
+		空的tuple，可以写成()：
+
+			>>> t = ()
+			>>> t
+			()
+
+		"可变的元组"
+		>>> t = ('a', 'b', ['A', 'B'])
+		>>> t[2][0] = 'X'
+		>>> t[2][1] = 'Y'
+		>>> t
+		('a', 'b', ['X', 'Y'])
+		#不可变指的是元素的指向不可变,但元素本身是List它是可变的
