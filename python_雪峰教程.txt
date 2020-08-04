@@ -261,3 +261,101 @@ python基础
 		>>> len('中文'.encode('utf-8'))  #encode转成bytes类型
 		6
 		可见，1个中文字符经过UTF-8编码后通常会占用3个字节，而1个英文字符只占用1个字节。
+
+		python保存的文本如果包含中文要在文件头添加
+		#!/usr/bin/env python3  #linux 设置
+		# -*- coding: utf-8 -*-   #编码设置
+		并且文本编译软件设置选择UTF-8 without BOM编码
+
+
+
+		格式化输出
+		>>> 'Hello, %s' % 'world'
+		'Hello, world'
+		>>> 'Hi, %s, you have $%d.' % ('Michael', 1000000)
+		'Hi, Michael, you have $1000000.'
+		你可能猜到了，%运算符就是用来格式化字符串的。在字符串内部，%s表示用字符串替换，%d表示用整数替换，有几个%?占位符，后面就跟几个变量或者值，顺序要对应好。如果只有一个%?，括号可以省略。
+
+		补位
+		>>> print('%2d-%02d' % (3,1))
+		3-01
+		>>> print('%.2f' % 3.1415)
+		3.14
+
+		需要 %字符,可以通过%转义
+		>>> 'growth rate: %d %%' % 7
+		'growth rate: 7 %'
+
+		format()也可以格式化输出
+
+
+list和tuple 
+	列表是同置的一种内置的数据类型,有序的集合,可以随时添加和删除其中的元素
+
+	>>> classmates = ['Michael', 'Bob', 'Tracy']
+	>>> classmates
+	['Michael', 'Bob', 'Tracy']
+
+	可以用len()函数计算里面的个数
+	>>> len(classmates)
+	3
+
+	用索引来访问里面元素,从0开始
+	>>> classmates[0]
+	'Michael'
+	>>> classmates[1]
+	'Bob'
+	>>> classmates[2]
+	'Tracy'
+	>>> classmates[3]
+	Traceback (most recent call last):
+	  File "<stdin>", line 1, in <module>
+	IndexError: list index out of range
+
+	取最后一个元素
+	classmates[-1]
+	>>>'Tracy'
+	以此类推可以获取倒数的元素-2,-3
+
+	List是可变的元素,可以追加素到末尾
+	classmates.append('Adm')
+	>>> classmates
+	['Michael', 'Bob', 'Tracy', 'Adam']
+
+	也可以把元素插入指定位置,比如索引1的位置
+	classmates.insert(1,'Jack')
+	['Michael', 'Jack', 'Bob', 'Tracy', 'Adam']
+
+	删除List末尾元素
+	classmates.pop()
+	'Adam'
+	>>> classmates
+	['Michael', 'Jack', 'Bob', 'Tracy']
+
+	删除指定位置元素,pop(i)
+	classmates.pop(1)
+	['Michael', 'Bob', 'Tracy']
+
+	元素替换
+	classmates[1] = 'Sarah'
+	['Michael', 'Sarah', 'Tracy']
+
+	list元素的数据类型也可以不同
+	L = ['Apple', 123, True ]
+
+	list元素也可以是另一个List
+	s = ['python', 'java', ['asp', 'php'], 'sql']
+
+	p = ['asp', 'php']
+	s = ['python', 'java', p, 'sql']  #元素也可以是变量
+
+	len(s)
+	4
+
+	s[2][1] 或p[1]
+	>>> 'php'
+
+	空list
+	L = []
+	len(L)
+	>>> 0 
