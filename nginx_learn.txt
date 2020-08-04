@@ -744,3 +744,46 @@ nginx的Gzip压缩
 			略过
 
 		注意,该模块是可选HTTP模块,如要使用,NGINX编译时要添加 --with_http_gzip_static_module指令
+
+	由ngx_http_gunzip_module处理的两个模块
+		nginx支持响应数据流进行gzip压缩,但需要客户端浏览器有能力解压与处理gzip压缩数据,但如果客户端不支持,就需要Nginx在向其发送数据之前将该数据解压
+
+		gunzip指令
+			gunzip_static on | off;
+				默认设关闭功能,开启时如果客户端浏览器不支持gzip处理,nginx将返回解压后的数据,如果客户端浏览器支持gzip处理,nginx忽略此设置,仍然返回压缩数据,解决数据解析的问题,同时保证nginx与后端服务器交互数据或者本身存储数据时仍然使用压缩数据,从而减少了服务器之间的数据传输量,降低了本地存储空间和缓存的使用率
+
+		该模块也是可选HTTP模块
+
+		其它略过
+
+
+	gzip压缩功能的使用
+		如在http块配置(所有的server块都生效)
+
+		gzip on;   #开启gzip功能
+		gzip_min_length 1024;   #响应页数据上限
+		gzip_buffers 4 16k		#缓存空间大小
+		gzip_comp_level 2;		#压缩级别为2
+		gzip_type text/plain application/x-javascript text/css application/xml;    #压缩源文件的类型
+		gzip_vary on;			#启用压缩标识
+		gunzip_static on;		#检查预压缩文件
+
+		如要在某server虚拟不启用压缩
+			server {
+				....
+				gzip off;
+			}
+
+
+		gzip压缩功能与IE6浏览器运行脚本的兼容问题
+			nginx开启对javascript脚本的压缩功后,IE6可能javascript脚本运行不正常,原因可能是ifame独立使用相同的javascrip脚本,也可能是跳转页响应数据头部的cache-control头域设置了no-cache指令,也可能是javascript脚本中的汉字没有被正确的编码导致解析失败(首次加载正常,刷新后不正常)
+			可设置
+				gzip_disable "MSIS[1-6]\.";
+
+		nginx与其他服务器交互时产生的gzip压缩功能相关问题
+			一类是多层服务器同时开启gzip压缩功能
+				解决办法,前端服务器开启gzip功能,后端服务器(如fastcgi,tomcat)最好不要开启gzip
+			一类是多层服务器之间对gzip压缩功能支持能力不同
+				nginx与squid两类服务器交互,squid可能只支持静态压缩,则nginx可以设置
+					gzip_static on;
+					gzip_http_version 1.0;
