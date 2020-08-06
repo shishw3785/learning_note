@@ -1000,3 +1000,14 @@ Rewrite功能的配置
 				permanet 将重写后的URI返回给客户端,状态码301,指明永久重定向
 
 				注意各标志的配合使用,如break第二行的break错配成last,那URI请求匹配成功后就会变成可能又被location /myweb/ 匹配到,又回到 第2行匹配,无限循环
+
+	rewrite_log on | off
+		配置是否开启URL重写日志的输出功能,默认off,如开启会以notice输出到error.log
+
+	set variable value
+		用于设置一个新的变量
+		variable 变量名称,注意用 $ 作为变量的第一个字符
+		value 变量的值
+
+	uninitialized_variable_warn on | off
+		用于配置使用未初始化的变量时,是否记录警告日志,默认开启
