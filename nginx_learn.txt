@@ -857,26 +857,146 @@ Nginx的Rewrite功能
 			该指令在功能上实现了最少连接负载均衡算法,在选择组内服务器时,考虑服务器权重的同时,每次选择的都是当前网络连接最少的那台服务器,如果这样的服务器有多台,就选择权重最大的服务器
 
 
-	Rewrite功能的配置
-		地址重写与地址转发
+Rewrite功能的配置
+	地址重写与地址转发
 
-		地址重写
-			实际上是为了实现地址标准化
+	地址重写
+		实际上是为了实现地址标准化
 
-			如输入google.cn也可以输入www.google.cn都是-->www.google.cn,而google.cn-->www.google.cn就是地址标准化,地址重定向的过程
+		如输入google.cn也可以输入www.google.cn都是-->www.google.cn,而google.cn-->www.google.cn就是地址标准化,地址重定向的过程
 
-		地址转发
-			指将一个域名指到另一个已有站点的过程
+	地址转发
+		指将一个域名指到另一个已有站点的过程
 
-		两者区别
-			地址转发后客户端浏览器地址栏的地址显示是不改变的，而地址重写后客户端浏览器地址栏中的地址改变为服务器选择确定的地址
+	两者区别
+		地址转发后客户端浏览器地址栏的地址显示是不改变的，而地址重写后客户端浏览器地址栏中的地址改变为服务器选择确定的地址
 
-			一次转发过程只产生一次请求,一次重写一般会产生两次请求
+		一次转发过程只产生一次请求,一次重写一般会产生两次请求
 
-			地址转发一般发生在同一站点项目内,而地址重写没限制
+		地址转发一般发生在同一站点项目内,而地址重写没限制
 
-			地址转发到的页面可以不用全路径名表示,而地址重写到的页面必须使用完整的路径
+		地址转发到的页面可以不用全路径名表示,而地址重写到的页面必须使用完整的路径
 
-			地址转发的过程中,可以将客户端请求的request范围内属性传递给新的页面,但地址重写不行
+		地址转发的过程中,可以将客户端请求的request范围内属性传递给新的页面,但地址重写不行
 
-			转发的速度比重写(重定向)要快
+		转发的速度比重写(重定向)要快
+
+
+	nginx使用ngx_http_rewrite_module模块支持URL重写功能,标准http模块
+
+
+	if 指令 if ( condition) { ... }
+		用来支持判断,根据条件判断结果选择不同的Nginx配置,可在server,location配置
+		
+		{} 为一个作用域,形成一个if配置块,条件为真时的nginx配置
+
+		condition 为判断条件 （true/false),支持以下几种设置方法
+			变量名
+				if ($slow) {
+					#nginx配置
+				}
+				#变量的值为空字符串或以 0 开头的任意字符,if认为条件为false,其他情部认为true
+
+			使用 = 或 ！= 比较字符串是相等,相等则认为true
+				if ($request_method = POST){
+					return 405;
+				}
+				#字符不需加引号
+
+			使用正则表达式对变量进行匹配,成功则为true
+				~ 区分大小写
+				~* 不区分大小写
+				!~ ,!~* 这两个刚好相反,匹配失败时认为为true
+
+				在正则表达式中还可以使用小括号对变量值进宪截取,然后在花括号中使用$1...$9引用其值
+
+				if ($http_user_agent ~ MSIE) {
+					.....    #$http_user_agent 包含MSIE字符串,为true
+				} 
+
+				if ($http_user_agent ~* "id=([^;]+)(?:;|$)"){
+					.... #可以使用$1 $2或$id来截取到的值
+				}
+
+			判断请求的文件是否存在使用 -f !-f
+				-f 存在认为true
+				!-f 请求的文件不存在但所在的目录存在,为true
+
+				if (-f $request_filename) {
+					...
+				}
+
+				其它-d -e 略过笔记
+
+
+
+	break 
+		用于中断当前相同作用域中的其他nginx配置,位于它前面的指令配置生效,后面的无效,可在server,location块使用
+
+		location / {
+			if ($slow){
+				set $id $1             #break之前的配置生效
+				break;
+				limit_rate 10;			#break之后的配置无效
+			}
+			......         #其他nginx配置,处于break指令所在作用域的上一层作用域,配置有效
+		}
+
+	return
+		用于完成对请求的处理,直接向客户端返回响应的状态代码.处于该指令后的所有nginx配置都是无效的,可在server,location,if块中使用
+
+		return [ text]   #text为返回给客户端的响应体内容,支持变量的使用
+		return code URL;	#code为返回给客户端的状态代码,可返回0~999的任意HTTP状态码
+		return URL;			#返回给客户端的URL地址
+
+		详细再百度
+
+
+	rewrite 指令
+		URI 统一资源标识符,用来唯一的标识一个资源
+		URL 统一资源定位器,它是一种具体的URI,还指明了如何locate这个资源
+
+		指令可以在 server,location中配置
+
+		rewrite regex replacement [flag];
+			regex 用于匹配URI的正则表达式,使用()标记截取的内容,注意接收到的URI不包含host地址,如
+
+				rewrite myweb.com http://newweb.com/permanent;
+				如果rewrite 重写 http://myweb.com/source是不行的,因为rewrite接收的到的URI是 /source 而不是 myweb.com
+
+				另外,请求URL中的请求指令不包含在rewrite指令接收到的URI内容中的
+				http://myweb.com/source?arg1=value1&agr2=value2
+
+				rewrite接收到的是 /source 而不包含 ?arg1......
+
+			replacement 匹配成功后用于替换URI中被截取内容的字符,默认情况下,如果该字符串是由'http://'或'https//'开头的,则不会继续向下对URI进行其他处理,而直接将重写后的URI返回给客户端
+
+				上面提到的请求指令不包含在URl中,但我们希望将其传给重写后的URI,那可以使用全局变量 $request_uri
+
+				rewrite myweb.com http://neweb.com$request_uri? permanet;
+					注意 request后有个 ? ,replacement支持nginx的全局变量使用
+
+			flag
+				用来设置rewrite对URI的处理行为,可以是以下标志中的一个
+
+				last 终止继续在本location中处理接收到的URI,并将此处重写的URI作为一个新的URI,使用各location块进行处理
+
+					如
+					location / {
+						rewrite ^(/myweb/.*)/media/(.*)\..*$ $1/mp3/$2.mp3 last;
+						rewrite ^(/myweb/.*)/audio/(.*)\..*$ $1/mp3/$2.ra last;
+					}
+					如URI在第2行匹配成功,NGINX不会继续使用第3行匹配处处理新的URI,而是让所有的location块重新匹配和处理新的URI
+
+				break 将此处重写的URI作为一个新的URI,在本块中继续处理(在当前location中继续执行,不会将新的URI转向到其他location块)
+					location /myweb/ {
+						rewrite ^(/myweb/.*)/media/(.*)\..*$ $1/mp3/$2.mp3 break;
+						rewrite ^(/myweb/.*)/audio/(.*)\..*$ $1/mp3/$2.ra break;
+					}
+					如URI在第2行匹配成功,nginx将在该location块使用第3行继续匹配和处理,始终在同一个location中
+
+				redirect 将重写后的URI返回给客户端,状态码为302,指明是临时重定向的URI,主要用在replacement变量不是以 http 或 https 开头的情况下
+
+				permanet 将重写后的URI返回给客户端,状态码301,指明永久重定向
+
+				注意各标志的配合使用,如break第二行的break错配成last,那URI请求匹配成功后就会变成可能又被location /myweb/ 匹配到,又回到 第2行匹配,无限循环
