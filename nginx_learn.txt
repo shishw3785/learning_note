@@ -1126,3 +1126,16 @@ Rewrite功能的配置
 				server_name home.myweb.name;
 				rewrite ^(.*) http://www.myweb.name/home$1 last;
 			}
+
+		目录自动添加 /
+			在访问www.myweb.com 应在浏览器写 www.myweb.com/index.html,若设置了站点首页为index.html，那index.html就可以省略,但如果是二级目录,这样的习惯可能就会无法正常访问,如在访问 www.myweb.com/bbs/index.html时 URL省略为 www.myweb.com/bbs/可以正常访问,但如果是www.myweb.com/bbs  末尾的 / 省略了访问就会出问题, 可以通过设置 自动加 / 解决
+
+			server{
+				server_name www.myweb.com;
+				location ^~ /bbs
+				{
+					if (-d $request_filename)     #判断是否存在目录
+						rewrite ^/(.*)([^/])$ http://$host/$1$2/ permanet;   #注意[^] 取反
+					}
+				}
+			}
