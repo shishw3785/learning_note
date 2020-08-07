@@ -1081,3 +1081,48 @@ Rewrite功能的配置
 			}
 		}
 		当访问jump1.myweb.name/reqsource 或jump2.myweb.name/reqsource, URL都将被NGINX重写为 jump.myweb.name/reqsource, 实现了三级域名的跳转
+
+	域名镜像
+		镜像网站是指将一个完全相同的网站分别放置到几个服务器上,并分别使用独立的URL,其中一个服务器上的网站叫主站,其他的为镜像网站
+
+		nginx的rewrite功能可以轻松地实现域名镜像的跳转,原理就是在server块中配置rewrite功能,将不同的镜像URL重写到指定的URL就行
+
+		server {
+			listen 80;
+			server_name mirror1.myweb.name;
+			rewrite ^(.*) http://jump1.myweb.name$1 last;
+		}
+
+		server {
+			listen 80;
+			server_name mirror2.myweb.name;
+			rewrite ^(.*) http://jump2.myweb.name$1 last;
+		}
+
+		不想做整个网站做镜像,只想为某一个子目录下的资源做镜像
+
+		server {
+			listen 80;
+			server_name jump.myweb.name;
+			location ^~ /source1
+			{
+				rewrite ^/source1(.*) http://jump.myweb.name/websrc2$1 last;
+				break;
+			}
+		}
+
+		独立域名
+			当一个网站包含多个板块时,可以为其中的某些板块设置独立域名,原理和子目录镜像一样
+
+			server{
+				listen 80;
+				server_name bbs.myweb.name;
+				rewrite ^(.*) http://www.myweb.name/bbs$1 last;
+			}
+
+
+			server{
+				listen 80;
+				server_name home.myweb.name;
+				rewrite ^(.*) http://www.myweb.name/home$1 last;
+			}
