@@ -1209,7 +1209,8 @@ nginx 代理服务
 		局域网内的机子提供WEB服务器等,也可以通过反向代理(Reverse proxy)让internet访问局域内的web服务器
 		角色是站点,目的是把站点的资源发布出去让其它客户端访问
 
-正向代理服务配置
+nginx正向代理服务配置
+	(了解即可,一般用squid做正向代理)
 	正向代理服务的指令可以在http, server, location设置,但一般都是在server设置即可
 
 	例子
@@ -1225,3 +1226,37 @@ nginx 代理服务
 		不要出现server_name指令
 		nginx代理服务器不支持正向代理HTTPS站点
 		一般使用上面配置就行,不建议修改,也可以结合缓存提高性能
+
+nginx 反向代理服务配置
+	相关的指令也是可以在http, server, location块设置,一般是在server中配置
+	指令主要是由ngx_http_proxy_module模块进行解析和处理,标准HTTP模块
+
+	proxy_pass URL;
+		设置被代理服务器的地下,可以是主机名称,IP地址加端口号等,也可以是UNIX-DOMAIN套接字路径
+
+		如
+		proxy_pass http://www.myweb.name/uri;
+		proxy_pass http://localhost:8000/uri/;
+		proxy_pass http://unix:/tmp/backend.socket:/uri/;
+		传输协议通常是 http 或 https
+
+		如果被代理的是一组服务器,可以使用upstream指令配置后端服务器组，如
+
+			upstream proxy_svrs 
+			{
+				server http://192.168.1.1:8001/uri/;
+				server http://192.168.1.1:8001/uri/;
+			}
+
+			server {
+				listen 80;
+				server_name www.myweb.name;
+				location /{
+					proxy_pass proxy_srvs;
+				}
+			}
+			注意的是因为在 upstream里有指定 http:// ,所以 proxy_pass 后就不需指明了
+
+			如果 upstream 里的是 server 192.168.1.1:8001/uri/; 那我们就要在proxy里指明 proxy_pass http:/proxy_srvs;
+		
+		URL中是否包含有URI,nginx处理方式是不同的
