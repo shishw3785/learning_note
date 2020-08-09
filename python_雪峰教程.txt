@@ -616,3 +616,30 @@ list和tuple
 		1
 
 		调用函数要传入正确的参数,否则会出错,可以看错误信息
+
+
+	定义函数
+		def my_abs(x):
+		    if x >= 0:
+		        return x
+		    else:
+		        return -x
+
+		print(my_abs(-99))
+
+		用def语句, 函数名my_abs, x参数 , : 冒号  缩进语中编写函数体, 用 return 返回函数值
+
+		一旦遇到return 时,函数就执行完毕,并将结果返回, 如果没有return语句,函数执行完毕也会返回结果,只是结果为 None,  return None 可以简写为 return
+
+		把my_abs()函数定义保存为abstest.py文件,那么可以在该文件的当前目录下启动python解释器, 用  from abstest import my_abs 来导入my_abs()函数,注意是 abstest不包含  .py
+
+		空函数
+			定义一个函数什么事也不想做
+
+			def nop():
+				pass
+
+			pass语句什么都不做,作用,作为占位符,如还没想好怎么写代码,可以放pass,让代码先能运行起来, pass 也可以放在其他语句中
+
+			if age >= 18:
+				pass	
