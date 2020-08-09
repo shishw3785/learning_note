@@ -643,3 +643,13 @@ list和tuple
 
 			if age >= 18:
 				pass	
+
+			修改一下my_abs的定义，对参数类型做检查，只允许整数和浮点数类型的参数。数据类型检查可以用内置函数isinstance()实现：
+
+				def my_abs(x):
+				    if not isinstance(x, (int, float)):
+				        raise TypeError('bad operand type')
+				    if x >= 0:
+				        return x
+				    else:
+				        return -x
