@@ -653,3 +653,21 @@ list和tuple
 				        return x
 				    else:
 				        return -x
+
+		返回多个值
+			import math
+
+			def move(x, y, step, angle=0):
+			    nx = x + step * math.cos(angle)
+			    ny = y - step * math.sin(angle)
+			    return nx, ny
+
+			>>> x, y = move(100, 100, 60, math.pi / 6)
+			>>> print(x, y)
+			151.96152422706632 70.0
+			但其实这只是一种假象，Python函数返回的仍然是单一值：
+
+			>>> r = move(100, 100, 60, math.pi / 6)
+			>>> print(r)
+			(151.96152422706632, 70.0)
+			其实返回的是一个元组

@@ -1259,4 +1259,38 @@ nginx 反向代理服务配置
 
 			如果 upstream 里的是 server 192.168.1.1:8001/uri/; 那我们就要在proxy里指明 proxy_pass http:/proxy_srvs;
 		
-		URL中是否包含有URI,nginx处理方式是不同的
+		URL中是否包含有URI,nginx处理方式是不同的,如果URL中不包含URI,nginx不会改变原地址的URI,如果URL中包含有URI,nginx会用新的URI替代原来的URI
+
+			server
+			{
+				server_name www.myweb.name;
+				location /server/
+				{
+				proxy_pass http://192.168.1.1;       # 1
+				#proxy_pass http://192.168.1.1/loc/;  #  2
+				}
+			}
+			如果是1的配置,www.myweb.name/server lcation匹配成功后,转向的是 http://192.168.1.1/server
+			如果是使用2的配置,www.myweb.name/server 转向的是 http://192.168.1.1/loc/
+
+			所以,在使用proxy_pass时,如果不想改变原地址中的URI,就不要在URL变量中配置URI
+
+		URL 末尾 / 问题
+			server{
+				server_name www.myweb.name;
+				location / {
+					proxy_pass http://192.168.1.1;   #  1
+					proxy_pass http://192.168.1.1/;  # 2
+				}
+			}
+
+			location块使用 / 作为uri变量的值,来匹配不包含URI的请求URL,由于请求URL中不包含URI,所以此时配置1与置2的效果是一样的,如 www.myweb.name/index.html
+
+			server{
+				server_name www.myweb.name;
+				location /server/ {
+					proxy_pass http://192.168.1.1;   #  1
+					proxy_pass http://192.168.1.1/;  # 2
+				}
+			}
+			此时location的uri变成了/server/,使用配置1的时,proxy_pass中的URL不包含uri,nginx将不改变原地址的URI, 使用配置2时,proxy_pass中包含uri / ,nginx会将原地址的uri改变成 /
