@@ -1294,3 +1294,16 @@ nginx 反向代理服务配置
 				}
 			}
 			此时location的uri变成了/server/,使用配置1的时,proxy_pass中的URL不包含uri,nginx将不改变原地址的URI, 使用配置2时,proxy_pass中包含uri / ,nginx会将原地址的uri改变成 /
+
+			1时 www.myweb.name/server/index.html --> http://192.168.1.1/server/index.html
+			2时 www.myweb.name/server/index.html --> http://192.168.1.1/index.html
+
+
+		proxy_set _header
+			更改nginx接收到的客户端请求的请求头信息,然后将新的请求头发送给被代理的服务器
+
+		proxy_redirect
+			用于修改被代理服务器返回的响应头中的location头域和refresh头域,与proxy_pass指令配合使用,比如nginx通过proxy_pass指令将客户端的请求地址重写为被代理服务器的地址,那么nginx服务器返回给客户端的响应头中location头域显示的地址就应该和客户端发起请求的地址相对应,
+			否则就会出问题
+
+		其它配置使用时再查,先略过
