@@ -1345,3 +1345,19 @@ nginx 反向代理服务配置
 			zone 设置名称
 			off 关闭proxy_cache功能,默认设置
 			从nginx0.7.66开始,proxy cache机制会检查被代理服务器响应数据HTTP头中的 Cache-control 和 Expire头域,当cache-control的值为 no-cache, no-store , private 或 max-age赋值为0或无意义时,当Expires头域中包含一个过期时间时,该响应数据不会被nginx缓存,这样做的目的是为了防止一些私有数据被其它客户端拿到
+
+		proxy_cache_path
+			用于设置nginx存储缓存数据的路径和缓存索引相关的内容
+			注意,与其它指令不同,只能在http中设置
+
+		proxy_cache_use_stale
+			如果Nginx在访问被代理服务器出现无法访问或错误时,nginx可以使用历史缓存响应客户端的请求,对于更新频率不高的后端服务器来说,该功能在一定程度上能够为客户端提供不间断访问
+
+		proxy_cache_vaild
+			针对不同的http响应状态设置不同的缓存时间,如200,302,301状态各缓存多久
+
+		proxy_no_cache
+			配置在什么情况下不使用cahce功能
+
+		proxy_store
+			配置是否在本地磁盘缓存来自被代理服务的响应数据,nginx提供的另一种缓存数据的方法,相对于cache更简单,它不提供缓存更新,内存索引等功能,不占用内存空间,对静态数据的效果比较好
