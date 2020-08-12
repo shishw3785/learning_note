@@ -725,3 +725,17 @@ list和tuple
 			enroll('Bob', 'M', 7) # city没有取值,使用默认值
 			enroll('Adam', 'M', city='Tianjin')  #不按顺序设值要指名参数名city
 
+			定义默认参数要牢记一点：默认参数必须指向不变对象！
+
+			def add_end(L=None):                   #在如果 L = [],每次add_end()后L都会添加END
+			    if L is None:
+			        L = []
+			    L.append('END')
+			    return L
+			现在，无论调用多少次，都不会有问题：
+
+			>>> add_end()
+			['END']
+			>>> add_end()
+			['END']
+

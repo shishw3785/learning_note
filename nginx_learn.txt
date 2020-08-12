@@ -1376,3 +1376,59 @@ nginx 反向代理服务配置
 					在一般网络环境下也能达到好效果,一般轮询算法,加权轮询算法等
 				动态负载均衡算法
 					在复杂的网络环境中适应性更强,效果较好,主要有基于任务量的最少连接优先算法,基于性能的最快响应算法等
+
+		实例1,对所有请求实现一般轮询规则的负载均衡
+
+			upstream backend {
+				server 192.168.1.2:80;  # weight=5;
+				server 192.168.1.3:80;  # weight=2;  #加权轮询
+				server 192.168.1.4:80;  #默认weight=1
+			}
+
+			server {
+				listen 80;
+				server_name www.myweb.name;
+				index index.html index.htm;
+
+				location / {
+					proxy_pass http://backend;
+					proxy_set_header Host $host;  #将当前location块的server_name指令值($host)填充到Host头域(不然不知道请求什么域名)
+					...
+				}
+			}
+
+		对特定资源实现负载均衡
+			upstream videobackend {
+				server 192.168.1.2:80;  
+				server 192.168.1.3:80;  
+				server 192.168.1.4:80;  
+			}
+
+			upstream filebackend {
+				server 192.168.1.5:80;  
+				server 192.168.1.6:80;  
+				server 192.168.1.7:80;  
+			}
+
+			server {
+				listen 80;
+				server_name www.myweb.name;
+				index index.html index.htm;
+
+				location /video/ {                  #/video/*的请求会在videobackend中得到负载均衡
+					proxy_pass http://videobackend;
+					proxy_set_header Host $host; 
+					...
+				}
+
+				location /file/ {
+					proxy_pass http://filebackend;
+					proxy_set_header Host $host;                           #以下保留客户端的真实信息
+					proxy_set_header X-Real-IP $remote_addr;                
+					proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; 
+					...
+				}
+			}
+			#保留客户端真实信息就是把客户端相关信息填充到请求头的x-real-ip等头域名,这样后端服务器组收到的请求中就保留了客户端的真实信息,而不是nginx服务器的信息
+
+
