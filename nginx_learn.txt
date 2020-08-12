@@ -1432,3 +1432,26 @@ nginx 反向代理服务配置
 			#保留客户端真实信息就是把客户端相关信息填充到请求头的x-real-ip等头域名,这样后端服务器组收到的请求中就保留了客户端的真实信息,而不是nginx服务器的信息
 
 
+		实现带有URL重写的负载均衡
+
+			upstream backend {
+				server 192.168.1.2:80;  
+				server 192.168.1.3:80;  
+				server 192.168.1.4:80;  
+			}
+
+			server {
+				listen 80;
+				server_name www.myweb.name;
+				index index.html index.htm;
+
+				location /file/ {
+					rewirte ^(/file/.*)/media/(.*)\.*$ $1/mp3/$2.mp3 last; #last重写后再次到其它location匹配
+				}
+
+				location / {                  
+					proxy_pass http://backend;
+					proxy_set_header Host $host; 
+					...
+				}
+			#假如客户端的请求URL为 www.myweb.name/file/download/media/1.mp3时,先是被location file匹配重写为 www.myweb.name/file/download/mp3/1.mp3,然后再被location / 匹配到转发到后端backend服务器组负载均衡
