@@ -1325,3 +1325,23 @@ nginx 反向代理服务配置
 		当proxy buffer关闭时,nginx只要接收到响应数据就会同步地传递给客户端,它本身不会读取完整的响应数据
 
 		相关指令略过
+
+
+	Proxy Cache
+		buffer与cache都与代理服务有关,主要用来提供客户端与被代理服务器之间的交互效率
+
+		buffer实现了被代理服务器响应数据的异步传输,cache则实现了nginx服务器对客户端请求的快速响应
+
+		nginx服务器在接收到被代理服务器的响应数据之后,一方面通过buffer把数据传给客户端,另一方面根据cace配置将这些数据缓存到本地硬盘上,当客户端下次要访问相同的数据时,nginx直接从硬盘上检索到相应的数据返回给用户,减少了与被代理服务交互的时间
+
+		proxy cache 依赖于 proxy buffer, 只有buffer开启时cache配置才发挥作用
+
+		nginx还提供了另一种将被代理服务器数据缓存到本地的方法 proxy store , 与cache的区别,它对来自被代理服务器的响应数据,尤其是静态数据只进行简单的缓存,不支持缓存过期更新,内存索引建立等功能,但支持设置用户或用户组对缓存数据的访问权限
+
+
+		指令
+		proxy_cache zone | off;
+			用于配置一块公用的区域的名称,该区域可以存放缓存的索引数据
+			zone 设置名称
+			off 关闭proxy_cache功能,默认设置
+			从nginx0.7.66开始,proxy cache机制会检查被代理服务器响应数据HTTP头中的 Cache-control 和 Expire头域,当cache-control的值为 no-cache, no-store , private 或 max-age赋值为0或无意义时,当Expires头域中包含一个过期时间时,该响应数据不会被nginx缓存,这样做的目的是为了防止一些私有数据被其它客户端拿到
