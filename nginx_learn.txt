@@ -1470,3 +1470,26 @@ nginx服务器的缓存机制
 		保存的副本有一个过期时间(新鲜度),超过该时间将会更新,判断过期的方法很多,保留时间等.许多web服务器具有检验功能,当副本过期后,先向后端发送检验请求进行检验,如果原数据与副本无变化,则将过期副本重新置为可用副本
 
 		优点是由于客户端的部分请求内容直接从web服务器获取,这减轻了后端服务器的负载,也减少了web服务器与后端服务器之间的网络流量,减少拥塞与数据转输延迟,降低了客户访问延迟.另一个功能如果后端服务器故障无法响应,客户端可以从web服务器中获取缓存的内容副本,增强了数据的可用性(继续不间断访问)
+
+
+	404错误驱动web缓存
+
+		.....
+		location / {
+			....
+			root /myweb/server/;
+			error_page 404 =200 /errorpage$request_uri;  #404定向到 /errpage目录下
+		}
+
+		location /errpage/ {    #捕获404错误的重定向
+			...
+			internal;			#该目录不能通过外部链接直接访问
+			alias /home/html/;
+			proxy_pass http://backend/;          #后端服务器组
+			proxy_set_header Accept-Encoding "'';   #后端不返回压缩(gzip/deflate)数据
+			proxy_store on;							#指定nginx将代理返回的文件保存
+			proxy_store_access user:rw group:rw all:r;	#配置缓存数据的访问权限
+			proxy_temp_path /myweb/server/tmp;	#配置临时目录,该目录要和/myweb/server在同一个硬盘分区内
+			}
+
+		配置将404错误响应进行重定向,然后使用location捕获重定向请求,向后端服务器发起请求获取响应数据,然后将数据转发给客户端的同时缓存到本地
