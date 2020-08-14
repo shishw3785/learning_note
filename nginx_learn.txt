@@ -1493,3 +1493,27 @@ nginx服务器的缓存机制
 			}
 
 		配置将404错误响应进行重定向,然后使用location捕获重定向请求,向后端服务器发起请求获取响应数据,然后将数据转发给客户端的同时缓存到本地
+
+
+	资源不存在驱动web缓存
+		.....
+		location / {
+			...
+			root /home/html/;
+			internal;			#该目录不能通过外部链接直接访问
+			alias /myweb/server/;               #暂时还不明白
+			
+			proxy_set_header Accept-Encoding "'';   #后端不返回压缩(gzip/deflate)数据
+			proxy_store on;							#指定nginx将代理返回的文件保存
+			proxy_store_access user:rw group:rw all:r;	#配置缓存数据的访问权限
+			proxy_temp_path /myweb/server/tmp;	#配置临时目录,该目录要和/myweb/server在同一个硬盘分区内
+
+			if ( !-f $request_filename )  #判断资源是否存在
+			{
+				proxy_pass http://backend/;
+			}
+			}
+
+		通过if判断请求的资源是否存在来驱动缓存,若不存在就通过后端servers获取数据回传给客户端,同时proxy store进行缓存
+
+	以上两种原理相近,可以将proxy store的缓存目录配置到/dev/shm(内存里)提高缓存数据的处理速度,如果不是在内存里缓存数据,这两种机制不支持缓存数据的清理机制,缓存文件会一直在硬盘上,注意这两种缓存机制只能缓存200状态下的响应数据(上面的404 =200),且不支持动态链接请求如getsource?id=1和getsource?id=2,这两种缓存机制会忽略id=1的参数(会造成返回的资源不正确),squid支持
