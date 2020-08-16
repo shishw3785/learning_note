@@ -1232,7 +1232,7 @@ nginx 反向代理服务配置
 	指令主要是由ngx_http_proxy_module模块进行解析和处理,标准HTTP模块
 
 	proxy_pass URL;
-		设置被代理服务器的地下,可以是主机名称,IP地址加端口号等,也可以是UNIX-DOMAIN套接字路径
+		设置被代理服务器的地址,可以是主机名称,IP地址加端口号等,也可以是UNIX-DOMAIN套接字路径
 
 		如
 		proxy_pass http://www.myweb.name/uri;

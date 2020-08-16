@@ -6,3 +6,15 @@ cookie与session
 	session是服务器通过某种形式记录各客户端的信息(类似客户端表格),通过cookie的帮助,session的数据是存放在服务器上
 
 	session比cooki安全,因为cooki的数据是存放在客户端上,可能会被修改,cooki的数据也可以加密
+
+
+python
+	pop(), 列表删除 l.pop()默认删除最后一个, l.pop(2) 删除索引2的数据
+		   字典删除   d.pop('key') 索引KEY值来删除
+
+ 	字典    判断 key存在   'key' in dic   或  d.get('key') 存在就返回其值,不返在则什么都不显示
+ 			d.get('key', -1)  不存在自定义返回值
+
+ 	集合    s = set([1,2,3]) 定义集合
+ 			s.add('元素')
+ 			s.remove('元素')
