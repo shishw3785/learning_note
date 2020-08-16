@@ -1517,3 +1517,25 @@ nginx服务器的缓存机制
 		通过if判断请求的资源是否存在来驱动缓存,若不存在就通过后端servers获取数据回传给客户端,同时proxy store进行缓存
 
 	以上两种原理相近,可以将proxy store的缓存目录配置到/dev/shm(内存里)提高缓存数据的处理速度,如果不是在内存里缓存数据,这两种机制不支持缓存数据的清理机制,缓存文件会一直在硬盘上,注意这两种缓存机制只能缓存200状态下的响应数据(上面的404 =200),且不支持动态链接请求如getsource?id=1和getsource?id=2,这两种缓存机制会忽略id=1的参数(会造成返回的资源不正确),squid支持
+
+	基于memcached的缓存机制
+		memcached是一款高性能的分布式缓存系统,通过在内存中的缓存数据用于动态web应用以减轻后台数据服务器的负载,可独立于任何程序作为后台程序运行,从而提高客户端的响应
+
+		它在内存中开辟一块空间,然后建立一个Hash表,将缓存数据通过 键/值 存储在Hash表中管理.memcached由 C/S 组成,服务器先通过计算 '键' 的Hash值来确定 键/值 对在服务端的位置,当确定 键/值 位置后,客户端就会发送一个查询请求给对应的服务器,让它来查找并返回确切的数据
+
+		ngx_http_memcached_modules标准HTTP模块专门处理memcached相关的配置和功能
+
+		官网例子
+
+		server {
+		    location / {
+		        set            $memcached_key "$uri?$args";  
+		        memcached_pass host:11211;    #设置memcached服务器地址
+		        error_page     404 502 504 = @fallback;
+		    }
+
+		    location @fallback {
+		        proxy_pass     http://backend;
+		    }
+		}
+		#设置$memcached_key值为$uri?$args,nginx服务器会根据该值调用HASH算法向memcached服务器发送查询请求若查询返回404等就将错误进行重定位,重定位后的请求被 location @fallback{...}获取后并转向后台服务器请求实际数据
