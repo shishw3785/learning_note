@@ -1605,12 +1605,13 @@ nginx服务器的缓存机制
 			server {
 				listen 80;
 				server_name www.test.com;
+				index index.html index.htm index.php;
 				#access_log logs/host.access.log main;
 				location / {					
 					proxy_next_upstream http_502 http_504 error timeout invalid_header; #如果后端的server返回502等,将请求转发到另一台server
 					proxy_cache cache_one;
 					proxy_cache_valid 200 304 12h;
-					proxy_cache_key $host$uri$is_args$args;
+					proxy_cache_key $host$uri$is_args$args; #缓存的keyy值以域名,URI,参数组成
 					proxy_set_header Host $host;
 					proxy_set_header X-Forwarded-For $remote_addr;
 					proxy_pass http://backend;
@@ -1626,7 +1627,7 @@ nginx服务器的缓存机制
 				{
 					proxy_set_header Host $host;
 					proxy_set_header X-Forwarded-For $remote_addr;
-					proxy_pass http://xxcc;
+					proxy_pass http://backend;
 				}
 
 
