@@ -18,3 +18,10 @@ python
  	集合    s = set([1,2,3]) 定义集合
  			s.add('元素')
  			s.remove('元素')
+
+
+
+ CGI
+ 	web服务器只能处理静态内容,动态内容需要web应用程序处理(php,python,java),web服务器通过CGI协议来把动态请求传给web应用程序
+
+ 	换句话说,通过CGI协议与搭建好的web应用程序,那web server就可以处理动态请求

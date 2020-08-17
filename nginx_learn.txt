@@ -1541,3 +1541,95 @@ nginx服务器的缓存机制
 		#设置$memcached_key值为$uri?$args,nginx服务器会根据该值调用HASH算法向memcached服务器发送查询请求若查询返回404等就将错误进行重定位,重定位后的请求被 location @fallback{...}获取后并转向后台服务器请求实际数据
 
 		memcached主要是程序员工作,其它指令用到在查,先略过
+
+
+	proxy cache 缓存机制
+		原理上面已有
+
+		使用md5算法将请求链接hash后生成文件系统目录保存响应数据
+
+		nginx启动后会生成专门的进程对磁盘上的缓存文件进行扫描,在内存中建立缓存索引,提高访问效率,还会有专门的管理进程对磁盘上的缓存文件进行过期的判定与更新管理
+
+		可以对任意数据进行缓存,不只是200状态的数据
+
+		proxy_cache的缺点,没有实现自动清理磁盘上缓存源数据的功能,这样服务器长时间运行要注意存储空间
+
+
+		nginx配置缓存例子(添加purge模块实现对缓存数据的半自动请求功能),purge模块要添加模块(ngx_cache_purege)通过--add-module
+
+		user www www;
+		worker_processes 8;
+		worker_rlimit_nofile 65535;
+		error_log logs/error.log crit;		
+		pid logs/nginx.pid;
+
+		events {
+			use epoll;
+			worker_connections 65535;
+		}
+		http {
+			include mime.types;
+			default_type application/octet-stream;	
+			charset utf-8;		
+			sendfile on;
+			tcp_nopush on;
+			keepalive_timeout 60;
+			tcp_nodelay on;
+			client_body_buffer_size 512k;
+			proxy_connect_timeout 5;
+			proxy_read_timeout 60;
+			proxy_send_timeout 5;
+			proxy_buffer_size 16k;
+			proxy_buffers 4 64k;
+			proxy_busy_buffers_size 128k;
+			proxy_temp_file_write_size 128k;
+			gzip on;
+			gzip_min_length 1k;
+			gzip_buffers 4 16k;
+			gzip_http_version 1.1;
+			gzip_comp_level 2;
+			gzip_types text/plain application/x-javascript text/css application/xml;
+			gzip_vary on;
+			proxy_temp_path /data0/proxy_temp_dir;
+			proxy_cache_path /data0/proxy_cache_dir levels=1:2 keys_zone=cache_one:200m inactive=1d max_size=30g; #设置缓存区名称cache_one,空间大小200M,1天清理一次缓存,硬盘缓存空间大小丶30G
+
+			#log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+			# '$status $body_bytes_sent "$http_referer" '
+			# '"$http_user_agent" "$http_x_forwarded_for"';
+
+			upstream backend {
+				#ip_hash;
+				server 192.168.1.1:80 weight=8 max_fails=2 fail_timeout=30s;
+			}
+			
+			server {
+				listen 80;
+				server_name www.test.com;
+				#access_log logs/host.access.log main;
+				location / {					
+					proxy_next_upstream http_502 http_504 error timeout invalid_header; #如果后端的server返回502等,将请求转发到另一台server
+					proxy_cache cache_one;
+					proxy_cache_valid 200 304 12h;
+					proxy_cache_key $host$uri$is_args$args;
+					proxy_set_header Host $host;
+					proxy_set_header X-Forwarded-For $remote_addr;
+					proxy_pass http://backend;
+					expires 1d;
+					}
+				location ~ /purge(/.*) {    #配置缓存清除功能
+					allow 127.0.0.1;
+					allow 192.168.1.1;
+					deny all;
+					proxy_cache_purge cache_one$host$1$is_args$args;
+					}
+				location ~ .*\.(php|jsp|cgi)?$   #配置数据不缓存
+				{
+					proxy_set_header Host $host;
+					proxy_set_header X-Forwarded-For $remote_addr;
+					proxy_pass http://xxcc;
+				}
+
+
+			#启用了ngx_cache_purge模块功能,在浏览器 http://myweb/purge/eppic.jpg就可以清除eppic.jpg缓存了
+
+
