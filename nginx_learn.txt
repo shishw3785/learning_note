@@ -1634,3 +1634,8 @@ nginx服务器的缓存机制
 			#启用了ngx_cache_purge模块功能,在浏览器 http://myweb/purge/eppic.jpg就可以清除eppic.jpg缓存了
 
 
+	nginx搭配squid
+		先略过
+
+	关于缓存架构的选则,一般应用场景nginx就足已,要求较高的要根据实际情况可以使用其它varnish,squid或CDN等来选择
+
