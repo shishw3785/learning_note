@@ -955,19 +955,57 @@ list和tuple
 
 	判断一个对象是可迭代对象呢？方法是通过collections模块的Iterable类型判断：
 
-	>>> from collections import Iterable
-	>>> isinstance('abc', Iterable) # str是否可迭代
-	True
-	>>> isinstance([1,2,3], Iterable) # list是否可迭代
-	True
-	>>> isinstance(123, Iterable) # 整数是否可迭代
-	False
+		>>> from collections import Iterable
+		>>> isinstance('abc', Iterable) # str是否可迭代
+		True
+		>>> isinstance([1,2,3], Iterable) # list是否可迭代
+		True
+		>>> isinstance(123, Iterable) # 整数是否可迭代
+		False
 
 	Python内置的enumerate函数可以把一个list变成索引-元素对，这样就可以在for循环中同时迭代索引和元素本身：
 
-	>>> for i, value in enumerate(['A', 'B', 'C']):
-	...     print(i, value)
+		>>> for i, value in enumerate(['A', 'B', 'C']):
+		...     print(i, value)
+		...
+		0 A
+		1 B
+		2 C
+
+
+高级特性 列表生成式
+	>>> [x * x for x in range(1, 11)]
+	[1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+	写列表生成式时，把要生成的元素x * x放到前面，后面跟for循环
+
+	for循环后面还可以加上if判断，这样我们就可以筛选出仅偶数的平方：
+
+	>>> [x * x for x in range(1, 11) if x % 2 == 0]
+	[4, 16, 36, 64, 100]
+
+	for循环其实可以同时使用两个甚至多个变量，比如dict的items()可以同时迭代key和value：
+
+	>>> d = {'x': 'A', 'y': 'B', 'z': 'C' }
+	>>> for k, v in d.items():
+	...     print(k, '=', v)
 	...
-	0 A
-	1 B
-	2 C
+	y = B
+	x = A
+	z = C
+
+	因此，列表生成式也可以使用两个变量来生成list：
+
+	>>> d = {'x': 'A', 'y': 'B', 'z': 'C' }
+	>>> [k + '=' + v for k, v in d.items()]
+	['y=B', 'x=A', 'z=C']
+
+	最后把一个list中所有的字符串变成小写：
+
+	>>> L = ['Hello', 'World', 'IBM', 'Apple']
+	>>> [s.lower() for s in L]
+
+
+	在一个列表生成式中，for前面的if ... else是表达式，而for后面的if是过滤条件，不能带else
+
+	>>> [x if x % 2 == 0 else -x for x in range(1, 11)]
+	[-1, 2, -3, 4, -5, 6, -7, 8, -9, 10]
