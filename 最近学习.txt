@@ -24,4 +24,20 @@ python
  CGI
  	web服务器只能处理静态内容,动态内容需要web应用程序处理(php,python,java),web服务器通过CGI协议来把动态请求传给web应用程序
 
- 	换句话说,通过CGI协议与搭建好的web应用程序,那web server就可以处理动态请求
+ 	换句话说,通过CGI协议与搭建好的web应用程序,那web server就'可以'处理动态请求
+
+ 	常用于编写CGI的语言有perl、php、python等，java也一样能写，但java的servlet完全能实现CGI的功能，且更优化、更利于开发。
+
+	cgi：它是一种协议。通过cgi协议，web server可以将动态请求和相关参数发送给专门处理动态内容的应用程序。
+	fastcgi：也是一种协议，只不过是cgi的优化版。cgi的性能较烂，fastcgi则在其基础上进行了改进。
+	php-cgi：fastcgi是一种协议，而php-cgi实现了这种协议。不过这种实现比较烂。它是单进程的，一个进程处理一个请求，处理结束后进程就销毁。
+	php-fmp：是对php-cgi的改进版，它直接管理多个php-cgi进程/线程。也就是说，php-fpm是php-cgi的进程管理器因此它也算是fastcgi协议的实现。在一定程度上讲，php-fpm与php的关系，和tomcat对java的关系是类似的。
+
+
+
+geoip2 nginx地区限制IP
+	https://www.jianshu.com/p/84610a65398c
+
+	https://github.com/leev/ngx_http_geoip2_module
+
+	GEOIP2数据库可以在maxmind.com 免费下载(要注册登录)
