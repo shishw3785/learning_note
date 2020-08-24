@@ -1266,5 +1266,86 @@ list和tuple
 				print(yes(s))
 
 
+	filter()
+		Python内建的filter()函数用于过滤序列。
 
+		和map()类似，filter()也接收一个函数和一个序列。和map()不同的是，filter()把传入的函数依次作用于每个元素，然后根据返回值是True还是False决定保留还是丢弃该元素。
+
+		例如，在一个list中，删掉偶数，只保留奇数，可以这么写：
+
+		def is_odd(n):
+		    return n % 2 == 1
+
+		list(filter(is_odd, [1, 2, 4, 5, 6, 9, 10, 15]))
+		# 结果: [1, 5, 9, 15]
+
+		其它先略过
+
+	sorted()
+		对list进行排序
+
+		>>> sorted([36, 5, -12, 9, -21])
+		[-21, -12, 5, 9, 36]
+
+		sorted()函数也是一个高阶函数，它还可以接收一个key函数来实现自定义的排序，例如按绝对值大小排序：
+
+		>>> sorted([36, 5, -12, 9, -21], key=abs)
+		[5, 9, -12, -21, 36]
+
+		给sorted传入key函数，即可实现忽略大小写的排序：
+
+		>>> sorted(['bob', 'about', 'Zoo', 'Credit'], key=str.lower)  #比对第一个字母
+		['about', 'bob', 'Credit', 'Zoo']
+		要进行反向排序，不必改动key函数，可以传入第三个参数reverse=True：
+
+		>>> sorted(['bob', 'about', 'Zoo', 'Credit'], key=str.lower, reverse=True)
+		['Zoo', 'Credit', 'bob', 'about']
+
+		练习假设我们用一组tuple表示学生名字和成绩：
+
+		L = [('Bob', 75), ('Adam', 92), ('Bart', 66), ('Lisa', 88)]
+		请用sorted()对上述列表分别按名字排序：
+
+			L = [('Bob', 75), ('Adam', 92), ('Bart', 66), ('Lisa', 88)]
+
+			d = {}
+
+			for x,y in L:   #换成字典对应
+			    d[x] = y   
+
+			def f(n):
+			    t = []
+			    s = []
+			    for i in n:      #把要排序的值整合到t列表
+			        t.append(i[0])
+			    for x in sorted(t, key=str.lower): #按首写字母排序
+			        tu = (x, d[x])
+			        s.append(tu)
+			    return s
+
+			print(f(L))
+
+		安分数来排
+
+			L = [('Bob', 75), ('Adam', 92), ('Bart', 66), ('Lisa', 88)]
+
+			d = {}
+
+			for x,y in L:    #也是换成字典不过key字是分数
+			    d[y] = x
+
+			def f(n):
+			    t = []
+			    s = []
+			    for i in n:
+			        t.append(i[1])
+			    for x in sorted(t, key=abs):
+			        tu = (d[x],x)
+			        s.append(tu)
+			    return s
+
+			print(f(L))
+
+        
+        
 
