@@ -41,3 +41,5 @@ geoip2 nginx地区限制IP
 	https://github.com/leev/ngx_http_geoip2_module
 
 	GEOIP2数据库可以在maxmind.com 免费下载(要注册登录)
+
+在python与shell  '' ' ' 或 "" " " 是不相等的,一个中间有空格,空字符判断用 '' 或 ""
