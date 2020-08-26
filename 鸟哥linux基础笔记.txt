@@ -1823,7 +1823,7 @@ shell脚本
 
 		test用法与[]几乎一模一样,中括号比较常用在条件判断式If...then...fi中
 
-		例执行一个程序让用户选择Y或N,当选择y或Y时,显示OK,continue.当选择n或N时,显示Oh,interrupt,选择其它显示I don't know what your choice is
+		例执行一个程序让用户选择Y或y,当选择y或Y时,显示OK,continue.当选择n或N时,显示Oh,interrupt,选择其它显示I don't know what your choice is
 			#!/bin/bash
 
 			read -p "please enter y/Y or n/N : " num
@@ -1852,7 +1852,7 @@ shell脚本
 		echo "first is $1"
 		echo "second is $2"
 		
-		上面脚本输出 >>
+		上面脚本输出 >> (name.sh 1 2 3 4)
 		script name is 2.sh
 		total have 4 参数
 		all name is 1 2 3 4
@@ -1865,7 +1865,7 @@ shell脚本
 		echo "script name is $0"
 		echo "total have $# 参数"
 		echo "all name is $@"
-		shift #偏移,移动变量
+		shift #偏移,移动变量,默认不填是 1
 		echo "total have $# 参数"
 		echo "all name is $@"
 		shift 3 #偏移3
