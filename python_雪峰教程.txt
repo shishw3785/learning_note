@@ -1429,6 +1429,7 @@ list和tuple
 
 
 	匿名函数
+		当我们在传入函数时，有些时候，不需要显式地定义函数，直接传入匿名函数更方便。
 		>>> list(map(lambda x: x * x, [1, 2, 3, 4, 5, 6, 7, 8, 9]))
 		[1, 4, 9, 16, 25, 36, 49, 64, 81]
 		通过对比可以看出，匿名函数lambda x: x * x实际上就是：
@@ -1453,3 +1454,66 @@ list和tuple
 
 		def build(x, y):
 	    	return lambda: x * x + y * y   #注意函数没有参数
+
+
+	装饰器
+		由于函数也是一个对象，而且函数对象可以被赋值给变量，所以，通过变量也能调用该函数。
+
+			>>> def now():
+			...     print('2015-3-25')
+			...
+			>>> f = now
+			>>> f()
+			2015-3-25
+			函数对象有一个__name__属性，可以拿到函数的名字：
+
+			>>> now.__name__
+			'now'
+			>>> f.__name__
+			'now'
+
+		假设我们要增强now()函数的功能，比如，在函数调用前后自动打印日志，但又不希望修改now()函数的定义，这种在代码运行期间动态增加功能的方式，称之为“装饰器”（Decorator）。
+
+		本质上，decorator就是一个返回函数的高阶函数。所以，我们要定义一个能打印日志的decorator，可以定义如下：
+
+			def log(func):
+			    def wrapper(*args, **kw):  #可接受任意参数调用,但此例无参数
+			        print('call %s():' % func.__name__)
+			        return func(*args, **kw)
+			    return wrapper
+		观察上面的log，因为它是一个decorator，所以接受一个函数作为参数，并返回一个函数。我们要借助Python的@语法，把decorator置于函数的定义处：
+
+			@log
+			def now():
+			    print('2015-3-25')
+			调用now()函数，不仅会运行now()函数本身，还会在运行now()函数前打印一行日志：
+
+			>>> now()
+			call now():
+			2015-3-25
+			把@log放到now()函数的定义处，相当于执行了语句：
+
+			now = log(now)
+
+
+			还差最后一步。因为我们讲了函数也是对象，它有__name__等属性，但你去看经过decorator装饰之后的函数，它们的__name__已经从原来的'now'变成了'wrapper'：
+
+			>>> now.__name__
+			'wrapper'
+			因为返回的那个wrapper()函数名字就是'wrapper'，所以，需要把原始函数的__name__等属性复制到wrapper()函数中，否则，有些依赖函数签名的代码执行就会出错。
+
+		所以完整的代码为
+			import functools
+
+			def log(func):
+			    @functools.wraps(func)
+			    def wrapper(*args, **kw):
+			        print('call %s():' % func.__name__)
+			        return func(*args, **kw)
+			    return wrapper
+
+			@log
+			def now():
+			    print('2015-3-25')
+
+			now()
