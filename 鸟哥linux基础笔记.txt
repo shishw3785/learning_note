@@ -2365,7 +2365,7 @@ linux账号管理与ACL权限设置
 				因此dmtsai账号同时支持dmtsai与users这两个用户组,在rwx文件时,针对用户组部分，只要是users与dmtsai拥用的功能,dmtsai用户都拥有
 				新文件的用户组是哪个还要看有效用户组(effctive group)
 
-				[dmtsai@localhost ~]$ groups #查看有交与支持的用户组 
+				[dmtsai@localhost ~]$ groups #查看有效与支持的用户组 
 				dmtsai users
 				#支持两个组，有效用户组为第一个dmtsai
 
@@ -2391,7 +2391,7 @@ linux账号管理与ACL权限设置
 
 				#注意newgrp可以修改用户的有效用户组,而且是另外以一个shell来提供这个功能的,因此要回到原来的环境中要exit
 
-				用户加入不同的用户组有两人方法,一个是root利用usermod，另一个是通过用户组管理员以gshadow帮加入
+				用户加入不同的用户组有两个方法,一个是root利用usermod，另一个是通过用户组管理员以gshadow帮加入
 
 				[root@localhost ~]# head -n 3 /etc/gshadow
 				root:::
