@@ -1559,3 +1559,23 @@ list和tuple
 			    print('yes')
 
 			ooo()
+
+
+	偏函数(了解就好)
+
+		通过设定参数的默认值，可以降低函数调用的难度。而偏函数也可以做到这一点
+
+		def int2(x, base=2):     #base默认10进制,我们这里设定为2
+		    return int(x, base)
+		这样，我们转换二进制就非常方便了：
+
+		>>> int2('1000000')
+		64
+
+
+		通过functools.partial就是帮助我们创建一个偏函数的，不需要我们自己定义int2()，可以直接使用下面的代码创建一个新的函数int2：
+
+		>>> import functools
+		>>> int2 = functools.partial(int, base=2)
+		>>> int2('1000000')
+		64
