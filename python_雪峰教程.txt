@@ -1536,3 +1536,26 @@ list和tuple
 			    print('2015-3-25')
 
 			#效果相当于  now = log('execute')(now)，首先执行log('execute')，返回的是decorator函数，再调用返回的函数，参数是now函数，返回值最终是wrapper函数。
+
+
+		练习 请设计一个decorator，它可作用于任何函数上，并打印该函数的执行时间(自己写的)
+
+			import time
+
+			def count_time(func):
+			    def wrap():
+			        start = time.time() #时间截(当前秒数)
+			        func()             #函数在开始与结束间执行
+			        end = time.time()
+			        usetime = end - start
+			        print('脚本运行所需时间 %.2f' % usetime)
+			        
+			    return wrap
+
+			@count_time
+			def ooo():
+			    print('hello')
+			    time.sleep(3)   #测试等待3s
+			    print('yes')
+
+			ooo()
