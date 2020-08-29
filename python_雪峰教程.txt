@@ -1679,3 +1679,56 @@ list和tuple
 		.....
 
 		也可以添加目录到sys.path,一是修改sys.path变量,二是修改PYTHONPATH环境变量永久生效
+
+
+面向对象编程(OOP)
+	概念
+		是一种程序设计思想。OOP把对象作为程序的基本单元，一个对象包含了数据和操作数据的函数。
+
+		面向过程的程序设计把计算机程序视为一系列的命令集合，即一组函数的顺序执行。为了简化程序设计，面向过程把函数继续切分为子函数，即把大块函数通过切割成小块函数来降低系统的复杂度。
+
+		而面向对象的程序设计把计算机程序视为一组对象的集合，而每个对象都可以接收其他对象发过来的消息，并处理这些消息，计算机程序的执行就是一系列消息在各个对象之间传递。
+
+		如打印一个学生的成绩, 面向过程的程序设计是这样写
+
+			std1 = {'name': 'xiaoming', 'score': 80}
+			std2 = {'name': 'hua', 'score':90}
+
+			def print_socre(std): #传入字典通过key读vlue
+				print('%s: %s' % (std['name'], std['score']))
+
+		面向对象是这样写
+
+			class Student(object):   #Student对象
+
+			    def __init__(self, name, score):
+			        self.name = name
+			        self.score = score
+
+			    def print_score(self): #对象的方法
+			        print('%s: %s' % (self.name, self.score))
+
+			bart = Student('Bart', 69)
+			lisa = Student('Lisa', 90)
+
+			bart.print_score()
+			lisa.print_score()
+
+
+	类和实例
+		面向对象最重要的概念就是类（Class）和实例（Instance），必须牢记类是抽象的模板，比如Student类，而实例是根据类创建出来的一个个具体的“对象”，每个对象都拥有相同的方法，但各自的数据可能不同。
+
+		class Student(object):  #创建一个Student类,object为所有类都会继承的类(有合适继承的可以不是object)
+
+	    def __init__(self, name, score): #通过__init__方法邦定想要的数据,第一个参数是self,代表创建的实例本身,在init内部就可以把各种属性邦定到self
+	        self.name = name
+	        self.score = score
+
+
+	    有了__init__方法，在创建实例的时候，就不能传入空的参数了，必须传入与__init__方法匹配的参数，但self不需要传，Python解释器自己会把实例变量传进去：
+
+		>>> bart = Student('Bart Simpson', 59) #创建实例 类名 + ()
+		>>> bart.name
+		'Bart Simpson'
+		>>> bart.score
+		59
