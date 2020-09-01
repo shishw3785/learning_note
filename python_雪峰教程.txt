@@ -1819,3 +1819,101 @@ list和tuple
 
 				>>> bart.get_name() # get_name()内部返回self.__name
 				'Bart Simpson'
+
+
+		继承与多态
+			class Animal(object):
+			    def run(self):
+			        print('Animal is running...')
+			当我们需要编写Dog和Cat类时，就可以直接从Animal类继承：
+
+			class Dog(Animal):
+			    pass
+
+			class Cat(Animal):
+			    pass
+			对于Dog来说，Animal就是它的父类，对于Animal来说，Dog就是它的子类。Cat和Dog类似。
+
+			继承有什么好处？最大的好处是子类获得了父类的全部功能。由于Animial实现了run()方法，因此，Dog和Cat作为它的子类，什么事也没干，就自动拥有了run()方法：
+
+			dog = Dog()
+			dog.run()
+
+			cat = Cat()
+			cat.run()
+			运行结果如下：
+
+			Animal is running...
+			Animal is running...
+
+			子类重新写方法
+
+				class Dog(Animal):
+
+				    def run(self):
+				        print('Dog is running...')
+
+				class Cat(Animal):
+
+				    def run(self):
+				        print('Cat is running...')
+				再次运行，结果如下：
+
+				Dog is running...
+				Cat is running...
+				当子类和父类都存在相同的run()方法时，我们说，子类的run()覆盖了父类的run()，在代码运行的时候，总是会调用子类的run()。这样，我们就获得了继承的另一个好处：多态。
+
+			多态
+				class Animal:
+
+				    def kind(self):
+				        print("i am animal")
+
+
+				class Dog(Animal):
+
+				    def kind(self):
+				        print("i am a dog")
+
+
+				class Cat(Animal):
+
+				    def kind(self):
+				        print("i am a cat")
+
+
+				class Pig(Animal):
+
+				    def kind(self):
+				        print("i am a pig")
+
+				# 这个函数接收一个animal参数，并调用它的kind方法
+				def show_kind(animal):
+				    animal.kind()
+
+
+				d = Dog()
+				c = Cat()
+				p = Pig()
+
+				show_kind(d)
+				show_kind(c)
+				show_kind(p)
+
+				------------------
+				打印结果：
+
+				i am a dog
+				i am a cat
+				i am a pig
+				狗、猫、猪都继承了动物类，并各自重写了kind方法。show_kind()函数接收一个animal参数，并调用它的kind方法。可以看出，无论我们给animal传递的是狗、猫还是猪，都能正确的调用相应的方法，打印对应的信息。这就是多态
+
+				实际上，由于Python的动态语言特性，传递给函数show_kind()的参数animal可以是 任何的类型，只要它有一个kind()的方法即可。动态语言调用实例方法时不检查类型，只要方法存在，参数正确，就可以调用。这就是动态语言的“鸭子类型”，它并不要求严格的继承体系，一个对象只要“看起来像鸭子，走起路来像鸭子”，那它就可以被看做是鸭子。
+
+					class Job:
+
+					    def kind(self):
+					        print("i am not animal, i am a job")
+
+					j = Job()
+					show_kind(j)
