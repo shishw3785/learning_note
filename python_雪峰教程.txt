@@ -1910,10 +1910,80 @@ list和tuple
 
 				实际上，由于Python的动态语言特性，传递给函数show_kind()的参数animal可以是 任何的类型，只要它有一个kind()的方法即可。动态语言调用实例方法时不检查类型，只要方法存在，参数正确，就可以调用。这就是动态语言的“鸭子类型”，它并不要求严格的继承体系，一个对象只要“看起来像鸭子，走起路来像鸭子”，那它就可以被看做是鸭子。
 
-					class Job:
+					class Job（object):
 
 					    def kind(self):
 					        print("i am not animal, i am a job")
 
 					j = Job()
 					show_kind(j)
+
+
+
+		获取对象信息
+			使用type()
+				首先，我们来判断对象类型，使用type()函数：
+
+				基本类型都可以用type()判断：
+
+					>>> type(123)
+					<class 'int'>
+					>>> type('str')
+					<class 'str'>
+					>>> type(None)
+					<type(None) 'NoneType'>
+					>>> type(abs)
+					<class 'builtin_function_or_method'>
+
+				但是type()函数返回的是什么类型呢？它返回对应的Class类型。如果我们要在if语句中判断，就需要比较两个变量的type类型是否相同：
+
+					>>> type(123)==type(456)
+					True
+					>>> type(123)==int
+					True
+					>>> type('abc')==type('123')
+					True
+					>>> type('abc')==str
+					True
+
+				如果要判断一个对象是否是函数(内建函数,匿名函数等)怎么办？可以使用types模块中定义的常量：
+
+					>>> import types
+					>>> def fn():
+					...     pass
+					...
+					>>> type(fn)==types.FunctionType
+					True
+					>>> type(lambda x: x)==types.LambdaType
+					True
+					#其它略过
+
+			使用isinstance()
+				isinstance()也可以用作type()判断基本类型
+				对于class的继承关系来说，使用type()就很不方便。我们要判断class的类型，可以使用isinstance()函数。
+
+				我们回顾上次的例子，如果继承关系是：
+
+				object -> Animal -> Dog -> Husky
+				那么，isinstance()就可以告诉我们，一个对象是否是某种类型。先创建3种类型的对象：
+
+				>>> a = Animal()
+				>>> d = Dog()
+				>>> h = Husky()
+				然后，判断：
+
+				>>> isinstance(h, Husky)
+				True
+				没有问题，因为h变量指向的就是Husky对象。
+
+				再判断：
+
+				>>> isinstance(h, Dog)
+				True
+
+				同理h也是属于Animal, 但是a不属于Dog
+
+				并且还可以判断一个变量是否是某些类型中的一种，比如下面的代码就可以判断是否是list或者tuple：
+
+				>>> isinstance([1, 2, 3], (list, tuple))
+				True
