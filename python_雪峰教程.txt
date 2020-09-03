@@ -2067,3 +2067,16 @@ list和tuple
 				True
 				>>> hasattr([1,2,3], 'pop')
 				True
+
+			通过内置的一系列函数，我们可以对任意一个Python对象进行剖析，拿到其内部的数据。要注意的是，只有在不知道对象信息的时候，我们才会去获取对象信息。如果可以直接写：
+
+			sum = obj.x + obj.y
+			就不要写：
+
+			sum = getattr(obj, 'x') + getattr(obj, 'y')
+			一个正确的用法的例子如下：
+
+			def readImage(fp):
+			    if hasattr(fp, 'read'): #先判断fp是否存在read方法再执行
+			        return readData(fp)
+			    return None
