@@ -2150,3 +2150,143 @@ list和tuple
 			Traceback (most recent call last):
 			  File "<stdin>", line 1, in <module>
 			AttributeError: 'Student' object has no attribute 'set_age'
+
+		为了给所有实例都绑定方法，可以给class绑定方法：
+
+			>>> def set_score(self, score):
+			...     self.score = score
+			...
+			>>> Student.set_score = set_score
+		给class绑定方法后，所有实例均可调用：
+
+			>>> s.set_score(100)
+			>>> s.score
+			100
+			>>> s2.set_score(99)
+			>>> s2.score
+			99
+		通常情况下，上面的set_score方法可以直接定义在class中，但动态绑定允许我们在程序运行的过程中动态给class加上功能，这在静态语言中很难实现。
+
+		__slots__
+
+			如果我们想要限制实例的属性怎么办？比如，只允许对Student实例添加name和age属性。
+
+			为了达到限制的目的，Python允许在定义class的时候，定义一个特殊的__slots__变量，来限制该class实例能添加的属性：
+
+				class Student(object):
+				    __slots__ = ('name', 'age') # 用tuple定义允许绑定的属性名称
+			然后，我们试试：
+
+				>>> s = Student() # 创建新的实例
+				>>> s.name = 'Michael' # 绑定属性'name'
+				>>> s.age = 25 # 绑定属性'age'
+				>>> s.score = 99 # 绑定属性'score'
+				Traceback (most recent call last):
+				  File "<stdin>", line 1, in <module>
+				AttributeError: 'Student' object has no attribute 'score'
+			由于'score'没有被放到__slots__中，所以不能绑定score属性，试图绑定score将得到AttributeError的错误。
+
+			使用__slots__要注意，__slots__定义的属性仅对当前类实例起作用，对继承的子类是不起作用的
+
+
+	使用@property
+		Python内置的@property装饰器就是负责把一个方法变成属性调用的：
+
+		class Student(object):
+
+		    @property
+		    def score(self):
+		        return self._score
+
+		    @score.setter
+		    def score(self, value):
+		        if not isinstance(value, int):
+		            raise ValueError('score must be an integer!')
+		        if value < 0 or value > 100:
+		            raise ValueError('score must between 0 ~ 100!')
+		        self._score = value
+
+		@property的实现比较复杂，我们先考察如何使用。把一个getter方法变成属性，只需要加上@property就可以了，此时，@property本身又创建了另一个装饰器@score.setter，负责把一个setter方法变成属性赋值，于是，我们就拥有一个可控的属性操作：
+
+		>>> s = Student()
+		>>> s.score = 60 # OK，实际转化为s.set_score(60)
+		>>> s.score # OK，实际转化为s.get_score()
+		60
+		>>> s.score = 9999
+		Traceback (most recent call last):
+		  ...
+		ValueError: score must between 0 ~ 100!
+		注意到这个神奇的@property，我们在对实例属性操作的时候，就知道该属性很可能不是直接暴露的，而是通过getter和setter方法来实现的。
+
+		还可以定义只读属性，只定义getter方法，不定义setter方法就是一个只读属性：
+
+		class Student(object):
+
+		    @property
+		    def birth(self):
+		        return self._birth
+
+		    @birth.setter
+		    def birth(self, value):
+		        self._birth = value
+
+		    @property
+		    def age(self):
+		        return 2015 - self._birth
+
+
+	多重继承
+
+		动物的分类
+
+			class Animal(object):
+			    pass
+
+			# 大类:
+			class Mammal(Animal):
+			    pass
+
+			class Bird(Animal):
+			    pass
+
+			# 各种动物:
+			class Dog(Mammal):
+			    pass
+
+			class Bat(Mammal):
+			    pass
+
+			class Parrot(Bird):
+			    pass
+
+			class Ostrich(Bird):
+			    pass
+		现在，我们要给动物再加上Runnable和Flyable的功能，只需要先定义好Runnable和Flyable的类：
+
+			class Runnable(object):
+			    def run(self):
+			        print('Running...')
+
+			class Flyable(object):
+			    def fly(self):
+			        print('Flying...')
+		对于需要Runnable功能的动物，就多继承一个Runnable，例如Dog：
+
+			class Dog(Mammal, Runnable):
+			    pass
+
+		 通过多重继承，一个子类就可以同时获得多个父类的所有功能,Ostrich除了继承自Bird外，再同时继承Runnable。这种设计通常称之为MixIn。
+
+		 MixIn的目的就是给一个类增加多个功能，这样，在设计类的时候，我们优先考虑通过多重继承来组合多个MixIn的功能，而不是设计多层次的复杂的继承关系。
+
+		 举个例子，Python自带了TCPServer和UDPServer这两类网络服务，而要同时服务多个用户就必须使用多进程或多线程模型，这两种模型由ForkingMixIn和ThreadingMixIn提供。通过组合，我们就可以创造出合适的服务来。
+
+		比如，编写一个多进程模式的TCP服务，定义如下：
+
+			class MyTCPServer(TCPServer, ForkingMixIn): #功能一tcpserver, 功能二 多进程
+			    pass
+		编写一个多线程模式的UDP服务，定义如下：
+
+			class MyUDPServer(UDPServer, ThreadingMixIn):
+			    pass
+

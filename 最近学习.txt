@@ -87,3 +87,9 @@ python参数组合
 
 linux    less可以读取文件或标准输出,可上下翻查,可查关键字     ps aux | less
 
+内核文件位置
+				/boot 名为vmlinuz
+
+
+centos 8 重启网络
+	nmcli networking off && nmcli networking on 
