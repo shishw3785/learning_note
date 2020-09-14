@@ -2495,7 +2495,7 @@ list和tuple
 		5
 		>>> f.read(1)
 		b'1'
-		>>> f.seek(-3, 2)
+		>>> f.seek(-3, 2)  #bytes类型才能从结尾往前移动,str类型不行
 		14
 		>>> f.read(1)
 		b'f'
