@@ -2512,3 +2512,76 @@ list和tuple
 		with open('log1') as obj1, open('log2','w') as obj2:
 		    s=obj1.read()
 		    obj2.write(s)
+
+
+
+异常处理(刘江的博客学习)
+	
+	try…except…语句处理异常的工作机制如下：
+
+	首先，执行try子句（在关键字try和关键字except之间的语句）
+	如果没有异常发生，忽略except子句，try子句执行后结束。
+	如果在执行try子句的过程中发生了异常，那么try子句余下的部分将被忽略。如果异常的类型和 except 之后的名称相符，那么对应的except子句将被执行。
+
+		try:
+		    print("发生异常之前的语句正常执行")
+		    print(1/0)
+		    print("发生异常之后的语句不会被执行")
+		except ZeroDivisionError as e:
+		    print(e)
+
+		#--------------
+		结果：
+		发生异常之前的语句正常执行
+		division by zero
+
+	如果程序发生的异常不在你的捕获列表中，那么依然会抛出别的异常。
+
+	如果一个异常没有与任何的except匹配，那么这个异常将会传递给上层的try中。也就是前面说的嵌套处理能力。直到程序最顶端如果还没有被捕获，那么将弹出异常。
+
+		try:
+		    try:
+		        print("发生异常之前的语句正常执行")
+		        print(1/0)
+		        print("发生异常之后的语句不会被执行")
+		    except ValueError as e:
+		        print(e)
+
+		except ZeroDivisionError as e:
+		    print("里层没有抓好，只能辛苦我外层了")
+
+	可能包含多个except子句，分别来处理不同的特定的异常。但最多只有一个分支会被执行。所以except子句有排序先后问题，进了一条巷子就不会进别的巷子。
+
+		try:
+		    print("发生异常之前的语句正常执行")
+		    print(1/0)
+		    print("发生异常之后的语句不会被执行")
+		except NameError as e:
+		    print(e)
+		except ZeroDivisionError as e:
+		    print("我是第一个抓取到除零异常的")
+		except (ValueError,ZeroDivisionError) as e:
+		    print("我是备胎")
+
+		#------------
+		发生异常之前的语句正常执行
+		我是第一个抓取到除零异常的
+
+	一个except子句可以同时处理多个异常，这些异常将被放在一个括号里成为一个元组。
+
+		except (RuntimeError, TypeError, NameError):
+		        pass
+
+	最后一个except子句可以忽略异常的名称，它将被当作通配符使用，也就是说匹配所有异常。(了解)
+		except:
+		    print("Unexpected error:", sys.exc_info()[0])
+
+	通用异常：Exception
+	在Python的异常中，有一个通用异常：Exception，它可以捕获任意异常。
+
+		s1 = 'hello'
+		try:
+		    int(s1)
+		except Exception as e:
+		    print('错误')
+	那么既然有这个什么都能管的异常，其他诸如OSError、ValueError的异常是不是就可以不需要了？当然不是！很多时候程序只会弹出那么几个异常，没有必要针对所有的异常进行捕获，那样的效率会很低。另外，根据不同的异常种类，制定不同的处理措施，用于准确判断错误类型，存储错误日志，都是非常有必要甚至强制的。
