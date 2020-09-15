@@ -2585,3 +2585,58 @@ list和tuple
 		except Exception as e:
 		    print('错误')
 	那么既然有这个什么都能管的异常，其他诸如OSError、ValueError的异常是不是就可以不需要了？当然不是！很多时候程序只会弹出那么几个异常，没有必要针对所有的异常进行捕获，那样的效率会很低。另外，根据不同的异常种类，制定不同的处理措施，用于准确判断错误类型，存储错误日志，都是非常有必要甚至强制的。
+
+
+
+	finally和else子句
+		try except语法还有一个可选的else子句，如果使用这个子句，那么必须放在所有的except子句之后。这个子句将在try子句没有发生任何异常的时候执行。
+
+		无论try执行情况和except异常触发情况，finally子句都会被执行！
+
+		当else和finally同时存在时：
+
+			try:
+			    pass
+			except:
+			    pass
+			else:
+			    print("else")
+			finally:
+			    print("finally")
+		运行结果：
+
+			else
+			finally
+		如果有异常发生：
+
+			try:
+			    1/0
+			except:
+			    pass
+			else:
+			    print("else")
+			finally:
+			    print("finally")
+			运行结果：
+
+			finally
+
+	主动抛出异常：raise
+		因为有的时候，你需要记录错误信息，然后将异常继续往上层传递，让上层去处理异常，如下：
+
+			try:
+			    1/0
+			except ZeroDivisionError as ex:  #只是捕获到而已
+			    print("记录异常日志： ", ex)
+			    print("但是我自己无法处理，只能继续抛出，看看上层能否处理（甩锅）")
+			    raise    #抛到上层或外面
+			
+		有时候，你需要主动弹出异常，作为警告或特殊处理：
+
+			if not isinstance('abc', int):
+				raise ValueError('must be int')
+
+			Traceback (most recent call last):
+			  File "<pyshell#624>", line 2, in <module>
+			    raise ValueError('must be int')
+			ValueError: must be int
