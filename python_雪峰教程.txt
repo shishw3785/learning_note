@@ -2640,3 +2640,102 @@ list和tuple
 			  File "<pyshell#624>", line 2, in <module>
 			    raise ValueError('must be int')
 			ValueError: must be int
+
+
+
+		自定义异常
+			Python内置了很多的异常类，并且这些类都是从BaseException类派生的。
+
+			下面是一些常见异常类，请把它们记下来！这样你在见到大多数异常的时候都能快速准确的判断异常类型。
+
+				异常名	解释
+				AttributeError	试图访问一个对象没有的属性
+				IOError	输入/输出异常
+				ImportError	无法引入模块或包；多是路径问题或名称错误
+				IndentationError	缩进错误
+				IndexError	下标索引错误
+				KeyError	试图访问不存在的键
+				KeyboardInterrupt	Ctrl+C被按下，键盘终止输入
+				NameError	使用未定义的变量
+				SyntaxError	语法错误
+				TypeError	传入对象的类型与要求的不符合
+				UnboundLocalError	试图访问一个还未被设置的局部变量
+				ValueError	传入一个调用者不期望的值，即使值的类型是正确的
+				OSError	操作系统执行错误
+			大多数情况下，上面的内置异常已经够用了，但是有时候你还是需要自定义一些异常。自定义异常应该继承Exception类，直接继承或者间接继承都可以，例如:
+
+				class MyExcept(Exception):
+
+				    def __init__(self, msg):
+				        self.message = msg
+
+				    def __str__(self):
+				        return self.message
+
+				try:
+				    raise MyExcept('我的异常!')
+				except MyExcept as ex:
+				    print(ex)　
+			异常的名字都以Error结尾，我们在为自定义异常命名的时候也需要遵守这一规范，就跟标准的异常命名一样。
+
+
+
+调试与测试(刘江的博客)
+
+	调试
+	
+		新手一般用print()调试代码,缺点是到最后面要删除这些print，不然代码多出好多行与输出一堆无用的信息
+
+		断言assert
+			凡是用print()来辅助查看的地方，都可以用断言来替代。它会对后面的表达式进行判断，如果表达式为True，那就什么都不做，程序接着往下走；如果False，那么就会弹出异常
+
+			a = 1
+			pass
+			assert a > 5
+			pass
+			运行结果：
+
+			Traceback (most recent call last):
+			  File "F:/Python/pycharm/201705/1.py", line 3, in <module>
+			    assert a > 5
+			AssertionError
+
+			但是，程序中如果到处充斥着assert，和print()相比也好不到哪去。不过，启动Python解释器时可以用-O参数来关闭assert。关闭后，所有的assert语句相当于pass语句。
+
+		日志logging
+			logging是Python内置的一个日志模块，不但可以将信息在屏幕上打印，还可以输出到文件，保留下来。使用logging之前，需要先通过import logging导入该模块。
+
+			具体的logging模块的用法，在后面的章节有详细的介绍，这里简单举例。
+
+			import logging
+
+			logging.basicConfig(level=logging.INFO)
+
+			def func(s):
+			    logging.info("s的数据类型为 %s" % type(s))
+			    return s/10
+
+			func("100")
+			运行结果：
+
+			INFO:root:s的数据类型为 <class 'str'>
+			Traceback (most recent call last):
+			  File "F:/Python/pycharm/201705/1.py", line 9, in <module>
+			    foo("100")
+			  File "F:/Python/pycharm/201705/1.py", line 7, in foo
+			    return s/10
+			TypeError: unsupported operand type(s) for /: 'str' and 'int'
+			logging允许你指定记录信息的级别，有DEBUG，INFO，WARNING，ERROR等几种级别，级别参数level会忽略比它低的级别信息。当指定level=INFO时，logging.DEBUG就不起作用了。同理，指定level=WARNING后，DEBUG和INFO就不起作用了。logging.basicConfig(level=logging.INFO)这行就是指定只有INFO以上级别的信息才会被记录下来。
+
+		pdb
+			python -m pdb 文件  --> n 单步查看等
+
+		IDE本身调试功能
+
+		各调试方法都可以使用
+
+
+	单元测试
+		单元测试是用来对一个模块、一个函数或者一个类进行正确性检验的工作。你的代码可能在语法、词法和运行过程中没有问题了，但是并不能代表它就完全符合你的设计预期，很有可能你希望得到A，它给你的结果却是B。这就需要我们对程序进行单元测试。单元测试测的不是语法问题，而是业务逻辑是否正确的问题。
+
+		先略过
