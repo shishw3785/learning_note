@@ -3030,6 +3030,51 @@ list和tuple
 			Python虽然不能利用多线程实现多核任务，但可以通过多进程实现多核任务。多个Python进程有各自独立的GIL锁，互不影响。
 
 	进程与线程先学到这里,其它用到再学
-	
+
 
 网络编程
+
+	tcp网络编程
+		服务端
+
+			import socket
+
+			ip_port = ('127.0.0.1', 9999)
+
+			sk = socket.socket()            # 创建套接字
+			sk.bind(ip_port)                # 绑定服务地址
+			sk.listen(5)                    # 监听连接请求
+			print('启动socket服务，等待客户端连接...')
+			conn, address = sk.accept()     # 等待连接，此处自动阻塞
+			while True:     # 一个死循环，直到客户端发送‘exit’的信号，才关闭连接
+			    client_data = conn.recv(1024).decode()      # 接收信息
+			    if client_data == "exit":       # 判断是否退出连接
+			        exit("通信结束")
+			    print("来自%s的客户端向你发来信息：%s" % (address, client_data))
+			    conn.sendall('服务器已经收到你的信息'.encode())    # 回馈信息给客户端
+			conn.close()    # 关闭连接
+
+		客户端
+
+			import socket
+
+			ip_port = ('127.0.0.1', 9999)
+
+			s = socket.socket()     # 创建套接字
+
+			s.connect(ip_port)      # 连接服务器
+
+			while True:     # 通过一个死循环不断接收用户输入，并发送给服务器
+			    inp = input("请输入要发送的信息： ").strip()
+			    if not inp:     # 防止输入空信息，导致异常退出
+			        continue
+			    s.sendall(inp.encode())
+
+			    if inp == "exit":   # 如果输入的是‘exit’，表示断开连接
+			        print("结束通信！")
+			        break
+
+			    server_reply = s.recv(1024).decode()
+			    print(server_reply)
+
+			s.close()       # 关闭连接
