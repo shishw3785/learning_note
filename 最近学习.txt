@@ -102,4 +102,19 @@ ICMP报文件为IP层数据报的数据加上数据报的首部,组成IP数据�
 IGMP协议的作用就是周期性扫描本网段内有没有主机在访问多播数据包
 
 
+python
+	把list、dict、str等Iterable变成Iterator可以使用iter()函数：
 
+		>>> isinstance(iter([]), Iterator)
+		True
+		>>> isinstance(iter('abc'), Iterator)
+		True
+
+
+
+未搞明白 两者区别
+	我们把变量从内存中变成可存储或传输的过程称之为序列化，在Python中叫pickling
+
+	由于Python的字符串类型是str，在内存中以Unicode表示，一个字符对应若干个字节。如果要在网络上传输，或者保存到磁盘上，就需要把str变为以字节为单位的bytes。
+
+	序列化也是把对象转换成bytes,
