@@ -157,3 +157,12 @@ linux
 	4.0K -rw-r--r--. 1 root root  288 Sep 18 14:54 1.py
 	......
 	#total值是文件数据区块数量 * 区块大小值
+
+	zcat/zless/zmore 可以查看.gz压缩文件
+
+	xz -k abc.txt  # xz也是压缩命令, -k可以在压缩后同时保留源文件
+
+	用tar备份比某个时刻要新的文件
+
+		tar -zcvf something.tar.gz --newer-mtime="20200801" /etc  #打包比0801要新的mtime文件
+		tar -ztvf something.tar.gz | grep -v "/$"  # 找出非/结尾的就是文件
