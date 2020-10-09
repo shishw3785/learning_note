@@ -1085,7 +1085,7 @@ bash shell的操作环境
 			-s 替换字符
 
 			所有小写变成大字
-			last | tr '[a-z]' '[A-Z]' #不用''也可以
+			last | tr '[a-z]' '[A-Z]' 
 
 			先把unix文件变成dos换行符文件
 			cp /etc/passwd ~/passwd && unix2dos ~/passwd
@@ -5223,7 +5223,7 @@ linux账号管理与ACL权限设置
 (插入学习)
 	rsync
 		rsync -avz --delete /src/abc/ /det
-		#/src/abc没有/,会把abc目录内空包括abc目录全部复制到/det目录下,如果是/src/abc/只会把abc目录下的文件复制到/det,delete是删除/abc目录下没有而/det下有的文件
+		#/src/abc没有/,会把abc目录内空包括abc目录全部复制到/det目录下,如果是/src/abc/只会把abc目录下的文件复制到/det,delete是删除/abc目录下没有而/ldet下有的文件
 
 		rsync daemon模式可以在被同步的机子开启rsyncd服务等待客户端连接,然后在客户端安装rsync与inotify-tools来实时监控客户端的数据目录文件增改来同步到rsync服务端
 
