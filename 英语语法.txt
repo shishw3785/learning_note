@@ -1,0 +1,23 @@
+英语的句子拆解到最后都是为
+	
+	什么 	怎么样?
+	(人或物)  (发生了什么,是一个动作)
+
+	主 + 谓
+
+这个动作有5种类型(5种基本语型)
+	1 不及物动词
+		Xiao ming sleep
+		主 + 谓
+	2 及物动词
+		I love you
+		主  谓   宾
+	3 双及物动词
+		I teach you english
+		主  谓   间宾  直宾
+	4 复杂及物动词
+		I think you smart
+		主 谓   宾语  宾补
+	5 系动词
+		Xiao ming is tall #把tall赋值给xiaoming
+			主     谓   主补(表语)
