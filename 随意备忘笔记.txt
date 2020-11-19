@@ -195,3 +195,11 @@ linux
 		syslogd是cron mail message日志文件被切割后要kill -HUP重启的地方
 
 		rsyslogd是具体的日志软件服务
+
+apache反向代理
+	ProxyPass：
+		它主要是用作URL前缀匹配，不能有正则表达式，
+	ProxyPassMatch
+		这个实际上是url正则匹配，而不是简单的前缀匹配
+	ProxyPassReverse
+		它一般和ProxyPass指令配合使用，此指令使Apache调整HTTP重定向应答中Location, Content-Location, URI头里的URL，这样可以避免在Apache作为反向代理使用时。后端服务器的HTTP重定向造成的绕过反向代理的问题。
