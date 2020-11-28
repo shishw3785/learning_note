@@ -203,3 +203,5 @@ apache反向代理
 		这个实际上是url正则匹配，而不是简单的前缀匹配
 	ProxyPassReverse
 		它一般和ProxyPass指令配合使用，此指令使Apache调整HTTP重定向应答中Location, Content-Location, URI头里的URL，这样可以避免在Apache作为反向代理使用时。后端服务器的HTTP重定向造成的绕过反向代理的问题。
+
+Tracert 命令用 IP 生存时间 (TTL) 字段和 ICMP 错误消息来确定从一个主机到网络上其他主机的路由。

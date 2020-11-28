@@ -4438,7 +4438,8 @@ linux账号管理与ACL权限设置
 			[root@study ~]# jobs ; bg %3 ; jobs
 			[1] Stopped vim ~/.bashrc
 			[2]- Stopped find / -print
-			[3]+   Stopped                  find / -perm /7000 > /tmp/text.txt
+			[3]+   Stopped                  find / -perm /7000 >
+			 /tmp/text.txt
 			[3]+ find / -perm /7000 > /tmp/text.txt &
 			[1]- Stopped vim ~/.bashrc
 			[2]+ Stopped find / -print
